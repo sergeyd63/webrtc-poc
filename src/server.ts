@@ -25,8 +25,8 @@ export class Server {
         this.app = express();
         // this.httpServer = createServer(this.app);
         this.httpsServer = createServer({
-            key: fs.readFileSync('key.pem'),
-            cert: fs.readFileSync('cert.pem')
+            key: fs.readFileSync('./src/key.pem'),
+            cert: fs.readFileSync('./src/cert.pem')
         }, this.app)
         this.io = socketIO(this.httpsServer);
 
