@@ -135,7 +135,7 @@ peerConnection.ontrack = function ({ streams: [stream] }) {
 };
 
 navigator.getUserMedia(
-    { audio: true },
+    { audio: true, video: true },
     stream => {
         const localVideo = document.getElementById("local-video");
         if (localVideo) {
