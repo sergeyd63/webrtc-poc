@@ -7,9 +7,9 @@ const { RTCPeerConnection, RTCSessionDescription } = window;
 
 const peerConnection = new RTCPeerConnection({
     iceServers: [     // Information about ICE servers - Use your own!
-      {
-        urls: "stun:stun.stunprotocol.org"
-      }
+        {
+            urls: "stun:stun.stunprotocol.org"
+        }
     ]
 });
 
@@ -69,7 +69,8 @@ function updateUserList(socketIds) {
     });
 }
 
-const socket = io.connect("https://192.168.1.172:5050/");
+const socket = io.connect("localhost:5000");
+// const socket = io.connect("https://192.168.1.172:5050/");
 
 socket.on("update-user-list", ({ users }) => {
     updateUserList(users);
@@ -134,17 +135,20 @@ peerConnection.ontrack = function ({ streams: [stream] }) {
     }
 };
 
-navigator.getUserMedia(
-    { audio: true, video: true },
-    stream => {
+const ff = async function () {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        /* use the stream */
         const localVideo = document.getElementById("local-video");
         if (localVideo) {
             localVideo.srcObject = stream;
         }
 
         stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
-    },
-    error => {
+    } catch (err) {
+        /* handle the error */
         console.warn(error.message);
     }
-);
+}
+
+ff()
