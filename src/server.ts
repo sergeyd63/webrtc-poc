@@ -26,7 +26,8 @@ export class Server {
         // this.httpServer = createServer(this.app);
         this.httpsServer = createServer({
             key: fs.readFileSync('./src/key.pem'),
-            cert: fs.readFileSync('./src/cert.pem')
+            cert: fs.readFileSync('./src/cert.pem'),
+            passphrase: 'Opengl33'
         }, this.app)
         this.io = socketIO(this.httpsServer);
 
