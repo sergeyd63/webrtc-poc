@@ -1,15 +1,14 @@
 import express, { Application } from "express";
 import socketIO, { Server as SocketIOServer } from "socket.io";
-// import { createServer, Server as HTTPServer } from "http";
-import { createServer, Server as HTTPSServer } from "https";
+import { createServer, Server as HTTPServer } from "http";
+// import { createServer, Server as HTTPSServer } from "https";
 
 const path = require('path')
-// const https = require('https')
-const fs = require('fs')
+// const fs = require('fs')
 
 export class Server {
-    // private httpServer: HTTPServer;
-    private theServer: HTTPSServer
+    private theServer: HTTPServer;
+    // private theServer: HTTPSServer
     private app: Application;
     private io: SocketIOServer;
 
@@ -23,12 +22,12 @@ export class Server {
 
     private initialize(): void {
         this.app = express();
-        // this.httpServer = createServer(this.app);
-        this.theServer = createServer({
-            key: fs.readFileSync('./src/key.pem'),
-            cert: fs.readFileSync('./src/cert.pem'),
-            passphrase: 'Opengl33'
-        }, this.app)
+        this.theServer = createServer(this.app);
+        // this.theServer = createServer({
+        //     key: fs.readFileSync('./src/key.pem'),
+        //     cert: fs.readFileSync('./src/cert.pem'),
+        //     passphrase: 'Opengl33'
+        // }, this.app)
         this.io = socketIO(this.theServer);
 
         this.configureApp();

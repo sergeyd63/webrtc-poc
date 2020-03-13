@@ -2,6 +2,7 @@ let isAlreadyCalling = false;
 let getCalled = false;
 
 const existingCalls = [];
+const logElement = document.querySelector('#log')
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
@@ -12,6 +13,12 @@ const peerConnection = new RTCPeerConnection({
         }
     ]
 });
+
+function logEvents(...vals) {
+    logElement.innerHTML += '***'
+    vals.map(val => logElement.innerHTML = logElement.innerHTML + '<br>' + `- <strong>${val}</strong>`)
+    // logElement.innerHTML = logElement.innerHTML + '<br>' + `* <strong>${vals}</strong>`
+}
 
 function unselectUsersFromList() {
     const alreadySelectedUser = document.querySelectorAll(
@@ -69,8 +76,8 @@ function updateUserList(socketIds) {
     });
 }
 
-// const socket = io.connect("localhost:5000");
-const socket = io.connect("https://192.168.1.172:5050/");
+const socket = io.connect("localhost:5000");
+// const socket = io.connect("https://192.168.1.172:5050/");
 
 socket.on("update-user-list", ({ users }) => {
     updateUserList(users);
@@ -85,6 +92,7 @@ socket.on("remove-user", ({ socketId }) => {
 });
 
 socket.on("call-made", async data => {
+    logEvents(`Get Called: ${getCalled}`)
     if (getCalled) {
         const confirmed = confirm(
             `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
@@ -147,7 +155,8 @@ const ff = async function () {
         stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
     } catch (err) {
         /* handle the error */
-        console.warn(error.message);
+        logEvents(err.message, err.name)
+        console.warn(err.message);
     }
 }
 
