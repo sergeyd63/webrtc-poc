@@ -15,7 +15,7 @@ const peerConnection = new RTCPeerConnection({
 });
 
 function logEvents(...vals) {
-    logElement.innerHTML += '***'
+    logElement.innerHTML += '<br>***'
     vals.map(val => logElement.innerHTML = logElement.innerHTML + '<br>' + `- <strong>${val}</strong>`)
     // logElement.innerHTML = logElement.innerHTML + '<br>' + `* <strong>${vals}</strong>`
 }
@@ -137,11 +137,68 @@ socket.on("call-rejected", data => {
 });
 
 peerConnection.ontrack = function ({ streams: [stream] }) {
+    logEvents(`On Track set stream: ${stream}`)
     const remoteVideo = document.getElementById("remote-video");
     if (remoteVideo) {
         remoteVideo.srcObject = stream;
     }
 };
+
+peerConnection.onicecandidate = function (event) {
+    if (event.candidate) {
+        logEvents(`Event candidate: ${event.candidate}`)
+        // Send the candidate to the remote peer
+    } else {
+        logEvents(`Event candidate: All ICE candidates have been sent`)
+        // All ICE candidates have been sent
+    }
+};
+
+peerConnection.onnegotiationneeded = function () {
+    peerConnection.createOffer().then(function (offer) {
+        logEvents(`Set offer: ${offer}`)
+        return peerConnection.setLocalDescription(offer);
+    })
+        .then(function () {
+            logEvents(`Send offer promise`)
+            // Send the offer to the remote peer through the signaling server
+        });
+}
+//   }
+
+// peerConnection.onremovetrack = handleRemoveTrackEvent;
+peerConnection.oniceconnectionstatechange = function (event) {
+    logEvents(`ICE connection state: ${peerConnection.iceConnectionState}`)
+    if (peerConnection.iceConnectionState === "failed" ||
+        peerConnection.iceConnectionState === "disconnected" ||
+        peerConnection.iceConnectionState === "closed") {
+        // Handle the failure
+    }
+};
+
+peerConnection.onicegatheringstatechange = function () {
+    let label = "Unknown";
+    logEvents(`ICE gathering state: ${peerConnection.iceGatheringState}`)
+    switch (peerConnection.iceGatheringState) {
+        case "new":
+        case "complete":
+            label = "Idle";
+            break;
+        case "gathering":
+            label = "Determining route";
+            break;
+    }
+
+    // document.getElementById("iceStatus").innerHTML = label;
+}
+
+peerConnection.onsignalingstatechange = function (event) {
+    logEvents(`Signaling state: ${peerConnection.signalingState}`)
+    if (peerConnection.signalingState === "have-local-pranswer") {
+        // setLocalDescription() has been called with an answer
+    }
+};
+
 
 const ff = async function () {
     try {
@@ -153,11 +210,24 @@ const ff = async function () {
         }
 
         stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+        const d = document.getElementById('disconnect-local')
+        d.addEventListener('click', () => disconnect(stream))
+
     } catch (err) {
         /* handle the error */
         logEvents(err.message, err.name)
-        console.warn(err.message);
+        // console.log(err.message);
     }
 }
+
+function disconnect(stream) {
+    stream.getTracks().forEach(function (track) {
+        track.stop();
+    });
+}
+
+const disc = document.getElementById('disconnect-remote')
+
+disc.addEventListener('click', () => peerConnection && peerConnection.close())
 
 ff()

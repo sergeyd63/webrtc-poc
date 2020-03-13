@@ -23,8 +23,14 @@
                     Select active user on the left menu.
                 </h2>
                 <div class="video-container">
-                    <video autoplay class="remote-video" id="remote-video"></video>
-                    <video autoplay muted class="local-video" id="local-video"></video>
+                    <div style="display: flex;">
+                        <video autoplay class="remote-video" id="remote-video"></video>
+                        <div id="disconnect-remote" style="cursor: pointer;">Close Call</div>
+                    </div>
+                    <div style="display: flex;">
+                        <video autoplay muted class="local-video" id="local-video"></video>
+                        <div id="disconnect-local" style="cursor: pointer;">Close Camera</div>
+                    </div>
                 </div>
             </div>
         </div>
