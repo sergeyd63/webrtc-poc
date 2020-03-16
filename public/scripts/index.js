@@ -14,6 +14,9 @@ const peerConnection = new RTCPeerConnection({
     ]
 });
 
+let videoConstraints = { audio: true, video: true }
+let currentStream = undefined
+
 function logEvents(...vals) {
     logElement.innerHTML += '<br>***'
     vals.map(val => logElement.innerHTML = logElement.innerHTML + '<br>' + `- <strong>${val}</strong>`)
@@ -200,18 +203,59 @@ peerConnection.onsignalingstatechange = function (event) {
 };
 
 
-const ff = async function () {
+const getAllDevices = async function () {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        let devices = await navigator.mediaDevices.enumerateDevices()
+
+        const fd = devices.filter(d => d.kind === 'videoinput')
+
+        console.log(fd)
+
+        const deviceList = document.getElementById('devices')
+        deviceList.innerHTML = '';
+        deviceList.appendChild(document.createElement('option'));
+
+        fd.forEach(mediaDevice => {
+            const option = document.createElement('option');
+            option.value = mediaDevice.deviceId;
+            const label = mediaDevice.label || `Camera ${count++}`;
+            const textNode = document.createTextNode(label);
+            option.appendChild(textNode);
+            deviceList.appendChild(option);
+        });
+
+        deviceList.addEventListener('change', d => {
+            logEvents('Selection changed', d.target.value)
+            let videoConstraints = { deviceId: { exact: d.target.value } }
+
+            const constraints = {
+                video: videoConstraints,
+                audio: true
+            };
+            disconnect(currentStream)
+
+            startLocalVideo(constraints)
+        })
+
+    } catch (error) {
+        logEvents(err.message, err.name)
+    }
+}
+getAllDevices()
+
+const startLocalVideo = async function (constraints = videoConstraints) {
+
+    try {
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints)
         /* use the stream */
         const localVideo = document.getElementById("local-video");
         if (localVideo) {
-            localVideo.srcObject = stream;
+            localVideo.srcObject = currentStream;
         }
 
-        stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+        currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
         const d = document.getElementById('disconnect-local')
-        d.addEventListener('click', () => disconnect(stream))
+        d.addEventListener('click', () => disconnect(currentStream))
 
     } catch (err) {
         /* handle the error */
@@ -230,4 +274,4 @@ const disc = document.getElementById('disconnect-remote')
 
 disc.addEventListener('click', () => peerConnection && peerConnection.close())
 
-ff()
+startLocalVideo()
