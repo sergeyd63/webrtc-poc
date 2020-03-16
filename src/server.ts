@@ -93,6 +93,11 @@ export class Server {
                     socketId: socket.id
                 });
             });
+
+            socket.on("hangup-all", () => {
+                console.log('hangup')
+                socket.broadcast.emit("hang-up")
+            })
         });
     }
 

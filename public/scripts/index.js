@@ -6,7 +6,7 @@ const logElement = document.querySelector('#log')
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
-const peerConnection = new RTCPeerConnection({
+let peerConnection = new RTCPeerConnection({
     iceServers: [     // Information about ICE servers - Use your own!
         {
             urls: "stun:stun.stunprotocol.org"
@@ -14,13 +14,14 @@ const peerConnection = new RTCPeerConnection({
     ]
 });
 
+// let peerConnection = null
+
 let videoConstraints = { audio: true, video: true }
 let currentStream = undefined
 
 function logEvents(...vals) {
-    logElement.innerHTML += '<br>***'
-    vals.map(val => logElement.innerHTML = logElement.innerHTML + '<br>' + `- <strong>${val}</strong>`)
-    // logElement.innerHTML = logElement.innerHTML + '<br>' + `* <strong>${vals}</strong>`
+    logElement.innerHTML = '***<br>' + logElement.innerHTML
+    vals.map(val => logElement.innerHTML = `- <strong style="overflow-wrap: anywhere;">${val}</strong>` + '<br>' + logElement.innerHTML)
 }
 
 function unselectUsersFromList() {
@@ -79,7 +80,7 @@ function updateUserList(socketIds) {
     });
 }
 
-// const socket = io.connect("localhost:5000");
+// const socket = io.connect("localhost:5050");
 const socket = io.connect("https://192.168.1.172:5050/");
 
 socket.on("update-user-list", ({ users }) => {
@@ -138,6 +139,12 @@ socket.on("call-rejected", data => {
     alert(`User: "Socket: ${data.socket}" rejected your call.`);
     unselectUsersFromList();
 });
+
+socket.on("hang-up", () => {
+    console.log('broadcast hangup')
+    logEvents('called for hangup')
+    disconnect(currentStream, true)
+})
 
 peerConnection.ontrack = function ({ streams: [stream] }) {
     logEvents(`On Track set stream: ${stream}`)
@@ -264,14 +271,24 @@ const startLocalVideo = async function (constraints = videoConstraints) {
     }
 }
 
-function disconnect(stream) {
+function disconnect(stream, hangUp = false) {
+    logEvents('DISCONNECT')
+
     stream.getTracks().forEach(function (track) {
         track.stop();
     });
+
+    if (hangUp && peerConnection) {
+        peerConnection.close()
+    }
+    // socket.emit('disconnect')
 }
 
 const disc = document.getElementById('disconnect-remote')
 
-disc.addEventListener('click', () => peerConnection && peerConnection.close())
+disc.addEventListener('click', () => {
+    console.log('hangup')
+    socket.emit("hangup-all")
+})
 
 startLocalVideo()
