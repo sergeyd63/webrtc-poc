@@ -6,58 +6,72 @@ const logElement = document.querySelector('#log')
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
-let peerConnection = new RTCPeerConnection({
-    iceServers: [     // Information about ICE servers - Use your own!
-        {
-            urls: "stun:stun.stunprotocol.org"
-        }
-    ]
-});
+let peerConnection = null
+// new RTCPeerConnection({
+//     iceServers: [     // Information about ICE servers - Use your own!
+//         {
+//             urls: "stun:stun.stunprotocol.org"
+//         }
+//     ]
+// });
 
 // let peerConnection = null
 
 let videoConstraints = { audio: true, video: true }
 let currentStream = undefined
+const activeUserContainer = document.getElementById("active-user-container");
 
 function logEvents(...vals) {
-    logElement.innerHTML = '***<br>' + logElement.innerHTML
-    vals.map(val => logElement.innerHTML = `- <strong style="overflow-wrap: anywhere;">${val}</strong>` + '<br>' + logElement.innerHTML)
+    if (logElement) {
+        logElement.innerHTML = '***<br>' + logElement.innerHTML
+        vals.map(val => logElement.innerHTML = `- <strong style="overflow-wrap: anywhere;">${val}</strong>` + '<br>' + logElement.innerHTML)
+    }
+    else {
+        console.log(...vals)
+    }
 }
 
 function unselectUsersFromList() {
-    const alreadySelectedUser = document.querySelectorAll(
-        ".active-user.active-user--selected"
-    );
+    // const alreadySelectedUser = document.querySelectorAll(
+    //     ".active-user.active-user--selected"
+    // );
 
-    alreadySelectedUser.forEach(el => {
-        el.setAttribute("class", "active-user");
-    });
+    // alreadySelectedUser.forEach(el => {
+    //     el.setAttribute("class", "active-user");
+    // });
 }
 
 function createUserItemContainer(socketId) {
-    const userContainerEl = document.createElement("div");
+    // const userContainerEl = document.createElement("div");
 
-    const usernameEl = document.createElement("p");
+    // const usernameEl = document.createElement("p");
 
-    userContainerEl.setAttribute("class", "active-user");
-    userContainerEl.setAttribute("id", socketId);
-    usernameEl.setAttribute("class", "username");
-    usernameEl.innerHTML = `Socket: ${socketId}`;
+    // userContainerEl.setAttribute("class", "active-user");
+    // userContainerEl.setAttribute("id", socketId);
+    // usernameEl.setAttribute("class", "username");
+    // usernameEl.innerHTML = `Socket: ${socketId}`;
 
-    userContainerEl.appendChild(usernameEl);
+    // userContainerEl.appendChild(usernameEl);
 
-    userContainerEl.addEventListener("click", () => {
-        unselectUsersFromList();
-        userContainerEl.setAttribute("class", "active-user active-user--selected");
-        const talkingWithInfo = document.getElementById("talking-with-info");
-        talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
-        callUser(socketId);
-    });
+    // userContainerEl.addEventListener("click", () => {
+    //     unselectUsersFromList();
+    //     userContainerEl.setAttribute("class", "active-user active-user--selected");
+    //     const talkingWithInfo = document.getElementById("talking-with-info");
+    //     talkingWithInfo.innerHTML = `Talking with: "Socket: ${socketId}"`;
+    //     callUser(socketId);
+    // });
 
-    return userContainerEl;
+    // return userContainerEl;
 }
 
 async function callUser(socketId) {
+    await startLocalVideo({
+        video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
+        audio: true
+    })
+
+    peerConnection = await initPeerConnection()
+
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
 
@@ -67,34 +81,121 @@ async function callUser(socketId) {
     });
 }
 
-function updateUserList(socketIds) {
-    const activeUserContainer = document.getElementById("active-user-container");
+async function initPeerConnection() {
+    console.log('initPeerConnection')
 
-    socketIds.forEach(socketId => {
-        const alreadyExistingUser = document.getElementById(socketId);
-        if (!alreadyExistingUser) {
-            const userContainerEl = createUserItemContainer(socketId);
-
-            activeUserContainer.appendChild(userContainerEl);
-        }
+    peerConnection = peerConnection || await new RTCPeerConnection({
+        iceServers: [     // Information about ICE servers - Use your own!
+            {
+                urls: "stun:stun.stunprotocol.org"
+            }
+        ]
     });
+
+    peerConnection.ontrack = function ({ streams: [stream] }) {
+        logEvents(`peerConnection - On Track set stream: ${stream}`)
+        const remoteVideo = document.getElementById("remote-video");
+        if (remoteVideo) {
+            remoteVideo.srcObject = stream;
+        }
+    };
+
+    // peerConnection.onicecandidate = function (event) {
+    //     if (event.candidate) {
+    //         logEvents(`peerConnection - Event candidate: ${event.candidate}`)
+    //         // Send the candidate to the remote peer
+    //     } else {
+    //         logEvents(`peerConnection - Event candidate: All ICE candidates have been sent`)
+    //         // All ICE candidates have been sent
+    //     }
+    // };
+
+    peerConnection.onnegotiationneeded = function () {
+        peerConnection.createOffer().then(function (offer) {
+            logEvents(`peerConnection - Set offer: ${offer}`)
+            return peerConnection.setLocalDescription(offer);
+        })
+            .then(function () {
+                logEvents(`peerConnection - Send offer promise`)
+                // Send the offer to the remote peer through the signaling server
+            });
+    }
+    //   }
+
+    // peerConnection.onremovetrack = handleRemoveTrackEvent;
+    // peerConnection.oniceconnectionstatechange = function (event) {
+    //     logEvents(`peerConnection - ICE connection state: ${peerConnection.iceConnectionState}`)
+    //     if (peerConnection.iceConnectionState === "failed" ||
+    //         peerConnection.iceConnectionState === "disconnected" ||
+    //         peerConnection.iceConnectionState === "closed") {
+    //         // Handle the failure
+    //     }
+    // };
+
+    // peerConnection.onicegatheringstatechange = function () {
+    //     let label = "Unknown";
+    //     logEvents(`peerConnection - ICE gathering state: ${peerConnection.iceGatheringState}`)
+    //     switch (peerConnection.iceGatheringState) {
+    //         case "new":
+    //         case "complete":
+    //             label = "Idle";
+    //             console.log('ICE gathering - new/complete')
+    //             break;
+    //         case "gathering":
+    //             label = "Determining route";
+    //             console.log('ICE gathering - gathering')
+    //             break;
+    //     }
+
+    //     // document.getElementById("iceStatus").innerHTML = label;
+        
+    // }
+
+    // peerConnection.onsignalingstatechange = function (event) {
+    //     logEvents(`peerConnection - Signaling state: ${peerConnection.signalingState}`)
+    //     if (peerConnection.signalingState === "have-local-pranswer") {
+    //         // setLocalDescription() has been called with an answer
+    //     }
+    // };
+
+    currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+
+    return peerConnection
 }
 
+function updateUserList(socketIds) {
+    // socketIds.forEach(socketId => {
+    //     const alreadyExistingUser = document.getElementById(socketId);
+    //     if (!alreadyExistingUser) {
+    //         const userContainerEl = createUserItemContainer(socketId);
+
+    //         activeUserContainer.appendChild(userContainerEl);
+    //     }
+    // });
+}
+
+// const socket = io.connect("192.168.2.15:5050");
 // const socket = io.connect("localhost:5050");
 const socket = io.connect("https://192.168.1.172:5050/");
 
+socket.on('connect', () => {
+    console.log('socket id', socket.id)
+    activeUserContainer.innerHTML = `My id: <strong>${socket.id}</strong>`
+})
+
+
 socket.on("update-user-list", ({ users }) => {
-    updateUserList(users);
+    // updateUserList(users);
 });
 
 socket.on("remove-user", ({ socketId }) => {
-    const elToRemove = document.getElementById(socketId);
+    // const elToRemove = document.getElementById(socketId);
 
-    if (elToRemove) {
-        elToRemove.remove();
-    }
+    // if (elToRemove) {
+    //     elToRemove.remove();
+    // }
 });
-
+// accept call 
 socket.on("call-made", async data => {
     logEvents(`Get Called: ${getCalled}`)
     if (getCalled) {
@@ -111,6 +212,15 @@ socket.on("call-made", async data => {
         }
     }
 
+    await startLocalVideo({
+        video: { deviceId: { exact: '3b23687e7adb835e497f8b937f975a9e470d3d83ab31e37a30c920a08fc6f3c9' } },
+        audio: true
+    })
+
+    await initPeerConnection()
+
+   
+
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.offer)
     );
@@ -123,7 +233,7 @@ socket.on("call-made", async data => {
     });
     getCalled = true;
 });
-
+// accept answer
 socket.on("answer-made", async data => {
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.answer)
@@ -146,70 +256,6 @@ socket.on("hang-up", () => {
     disconnect(currentStream, true)
 })
 
-peerConnection.ontrack = function ({ streams: [stream] }) {
-    logEvents(`On Track set stream: ${stream}`)
-    const remoteVideo = document.getElementById("remote-video");
-    if (remoteVideo) {
-        remoteVideo.srcObject = stream;
-    }
-};
-
-peerConnection.onicecandidate = function (event) {
-    if (event.candidate) {
-        logEvents(`Event candidate: ${event.candidate}`)
-        // Send the candidate to the remote peer
-    } else {
-        logEvents(`Event candidate: All ICE candidates have been sent`)
-        // All ICE candidates have been sent
-    }
-};
-
-peerConnection.onnegotiationneeded = function () {
-    peerConnection.createOffer().then(function (offer) {
-        logEvents(`Set offer: ${offer}`)
-        return peerConnection.setLocalDescription(offer);
-    })
-        .then(function () {
-            logEvents(`Send offer promise`)
-            // Send the offer to the remote peer through the signaling server
-        });
-}
-//   }
-
-// peerConnection.onremovetrack = handleRemoveTrackEvent;
-peerConnection.oniceconnectionstatechange = function (event) {
-    logEvents(`ICE connection state: ${peerConnection.iceConnectionState}`)
-    if (peerConnection.iceConnectionState === "failed" ||
-        peerConnection.iceConnectionState === "disconnected" ||
-        peerConnection.iceConnectionState === "closed") {
-        // Handle the failure
-    }
-};
-
-peerConnection.onicegatheringstatechange = function () {
-    let label = "Unknown";
-    logEvents(`ICE gathering state: ${peerConnection.iceGatheringState}`)
-    switch (peerConnection.iceGatheringState) {
-        case "new":
-        case "complete":
-            label = "Idle";
-            break;
-        case "gathering":
-            label = "Determining route";
-            break;
-    }
-
-    // document.getElementById("iceStatus").innerHTML = label;
-}
-
-peerConnection.onsignalingstatechange = function (event) {
-    logEvents(`Signaling state: ${peerConnection.signalingState}`)
-    if (peerConnection.signalingState === "have-local-pranswer") {
-        // setLocalDescription() has been called with an answer
-    }
-};
-
-
 const getAllDevices = async function () {
     try {
         let devices = await navigator.mediaDevices.enumerateDevices()
@@ -222,6 +268,8 @@ const getAllDevices = async function () {
         deviceList.innerHTML = '';
         deviceList.appendChild(document.createElement('option'));
 
+        const dList = document.getElementById('dList')
+
         fd.forEach(mediaDevice => {
             const option = document.createElement('option');
             option.value = mediaDevice.deviceId;
@@ -229,6 +277,7 @@ const getAllDevices = async function () {
             const textNode = document.createTextNode(label);
             option.appendChild(textNode);
             deviceList.appendChild(option);
+            dList.innerHTML = `${dList.innerHTML} <br> id: ${mediaDevice.deviceId} <br> name: ${mediaDevice.label} `
         });
 
         deviceList.addEventListener('change', d => {
@@ -239,13 +288,13 @@ const getAllDevices = async function () {
                 video: videoConstraints,
                 audio: true
             };
-            disconnect(currentStream)
+            // disconnect(currentStream)
 
-            startLocalVideo(constraints)
+            // startLocalVideo(constraints)
         })
 
     } catch (error) {
-        logEvents(err.message, err.name)
+        logEvents(error.message, error.name)
     }
 }
 getAllDevices()
@@ -260,13 +309,17 @@ const startLocalVideo = async function (constraints = videoConstraints) {
             localVideo.srcObject = currentStream;
         }
 
-        currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+        // currentStream.getTracks().forEach(track => {
+        //     console.log('--- added track')
+        //     peerConnection.addTrack(track, currentStream)
+        // });
+        // console.log('added tracks', currentStream.getTracks().length)
         const d = document.getElementById('disconnect-local')
         d.addEventListener('click', () => disconnect(currentStream))
 
     } catch (err) {
         /* handle the error */
-        logEvents(err.message, err.name)
+        logEvents('startLocalVideo', err.message, err.name)
         // console.log(err.message);
     }
 }
@@ -291,4 +344,12 @@ disc.addEventListener('click', () => {
     socket.emit("hangup-all")
 })
 
-startLocalVideo()
+const callBtn = document.getElementById('call-btn')
+callBtn.addEventListener('click', (e) => {
+    const userId = document.getElementById('call-to').value
+    console.log(userId)
+
+    callUser(userId)
+})
+
+// startLocalVideo()

@@ -12,10 +12,13 @@
 
 <body>
     <div class="container">
+        <div class="active-users-panel" id="active-user-container">
+        </div>
+        <div class="active-users-panel">
+            <input id="call-to" />
+            <div id="call-btn">Call</div>
+        </div>
         <div class="content-container">
-            <div class="active-users-panel" id="active-user-container">
-                <h3 class="panel-title">Active Users:</h3>
-            </div>
             <div class="video-chat-container">
                 <div class="video-container">
                     <div style="display: flex;">
@@ -28,13 +31,14 @@
                     </div>
                 </div>
             </div>
-            <div class="active-users-panel" id="log">
-            </div>
-            <div class="active-users-panel" id="log">
+            <!-- <div class="active-users-panel" id="log">
+            </div> -->
+            <div class="active-users-panel">
                 <h2 class="talk-info" id="talking-with-info">
                     Select your device
                 </h2>
                 <select id="devices"></select>
+                <div id="dList"></div>
             </div>
             <!-- <h2 class="talk-info" id="talking-with-info">
                 Select active user on the left menu.
