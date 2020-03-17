@@ -6,7 +6,7 @@ const logElement = document.querySelector('#log')
 
 const { RTCPeerConnection, RTCSessionDescription } = window;
 
-let peerConnection = null
+let peerConnection = undefined
 // new RTCPeerConnection({
 //     iceServers: [     // Information about ICE servers - Use your own!
 //         {
@@ -64,30 +64,13 @@ function createUserItemContainer(socketId) {
     // return userContainerEl;
 }
 
-async function callUser(socketId) {
-    const constraints = {
-        video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
-        audio: true
-    }
-
-    // await startLocalVideo(constraints)
-    await startLocalVideo()
-
-    peerConnection = await initPeerConnection()
-
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-
-    socket.emit("call-user", {
-        offer,
-        to: socketId
-    });
-}
-
 async function initPeerConnection() {
     console.log('initPeerConnection')
 
-    peerConnection = peerConnection || await new RTCPeerConnection({
+    if (peerConnection) {
+        return peerConnection
+    }
+    peerConnection = await new RTCPeerConnection({
         iceServers: [     // Information about ICE servers - Use your own!
             {
                 urls: "stun:stun.stunprotocol.org"
@@ -113,16 +96,18 @@ async function initPeerConnection() {
     //     }
     // };
 
-    peerConnection.onnegotiationneeded = function () {
-        peerConnection.createOffer().then(function (offer) {
-            logEvents(`peerConnection - Set offer: ${offer}`)
-            return peerConnection.setLocalDescription(offer);
-        })
-            .then(function () {
-                logEvents(`peerConnection - Send offer promise`)
-                // Send the offer to the remote peer through the signaling server
-            });
-    }
+    currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+
+    // peerConnection.onnegotiationneeded = function () {
+    //     peerConnection.createOffer().then(function (offer) {
+    //         logEvents(`peerConnection - Set offer: ${offer}`)
+    //         return peerConnection.setLocalDescription(offer);
+    //     })
+    //         .then(function () {
+    //             logEvents(`peerConnection - Send offer promise`)
+    //             // Send the offer to the remote peer through the signaling server
+    //         });
+    // }
     //   }
 
     // peerConnection.onremovetrack = handleRemoveTrackEvent;
@@ -151,7 +136,7 @@ async function initPeerConnection() {
     //     }
 
     //     // document.getElementById("iceStatus").innerHTML = label;
-        
+
     // }
 
     // peerConnection.onsignalingstatechange = function (event) {
@@ -161,21 +146,21 @@ async function initPeerConnection() {
     //     }
     // };
 
-    currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+
 
     return peerConnection
 }
 
-function updateUserList(socketIds) {
-    // socketIds.forEach(socketId => {
-    //     const alreadyExistingUser = document.getElementById(socketId);
-    //     if (!alreadyExistingUser) {
-    //         const userContainerEl = createUserItemContainer(socketId);
+// function updateUserList(socketIds) {
+// socketIds.forEach(socketId => {
+//     const alreadyExistingUser = document.getElementById(socketId);
+//     if (!alreadyExistingUser) {
+//         const userContainerEl = createUserItemContainer(socketId);
 
-    //         activeUserContainer.appendChild(userContainerEl);
-    //     }
-    // });
-}
+//         activeUserContainer.appendChild(userContainerEl);
+//     }
+// });
+// }
 
 // const socket = io.connect("192.168.2.15:5050");
 // const socket = io.connect("localhost:5050");
@@ -188,6 +173,9 @@ socket.on('connect', () => {
 
 
 socket.on("update-user-list", ({ users }) => {
+    console.log(users)
+    const userInput = document.getElementById('call-to')
+    userInput.value = users[users.length - 1]
     // updateUserList(users);
 });
 
@@ -198,6 +186,27 @@ socket.on("remove-user", ({ socketId }) => {
     //     elToRemove.remove();
     // }
 });
+
+async function callUser(socketId) {
+    const constraints = {
+        video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
+        audio: true
+    }
+
+    // await startLocalVideo(constraints)
+    await startLocalVideo()
+
+    peerConnection = await initPeerConnection()
+
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+
+    socket.emit("call-user", {
+        offer,
+        to: socketId
+    });
+}
+
 // accept call 
 socket.on("call-made", async data => {
     logEvents(`Get Called: ${getCalled}`)
@@ -224,8 +233,6 @@ socket.on("call-made", async data => {
     await startLocalVideo()
 
     await initPeerConnection()
-
-   
 
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.offer)
@@ -320,6 +327,8 @@ const startLocalVideo = async function (constraints = videoConstraints) {
         //     peerConnection.addTrack(track, currentStream)
         // });
         // console.log('added tracks', currentStream.getTracks().length)
+        // currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+
         const d = document.getElementById('disconnect-local')
         d.addEventListener('click', () => disconnect(currentStream))
 
