@@ -65,10 +65,13 @@ function createUserItemContainer(socketId) {
 }
 
 async function callUser(socketId) {
-    await startLocalVideo({
+    const constraints = {
         video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
         audio: true
-    })
+    }
+
+    // await startLocalVideo(constraints)
+    await startLocalVideo()
 
     peerConnection = await initPeerConnection()
 
@@ -212,10 +215,13 @@ socket.on("call-made", async data => {
         }
     }
 
-    await startLocalVideo({
+    const constraints = {
         video: { deviceId: { exact: '3b23687e7adb835e497f8b937f975a9e470d3d83ab31e37a30c920a08fc6f3c9' } },
         audio: true
-    })
+    }
+
+    // await startLocalVideo(constraints)
+    await startLocalVideo()
 
     await initPeerConnection()
 
