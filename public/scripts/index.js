@@ -198,8 +198,8 @@ async function callUser(socketId) {
         audio: true
     }
 
-    await startLocalVideo(constraints)
-    // await startLocalVideo()
+    // await startLocalVideo(constraints)
+    await startLocalVideo()
 
     peerConnection = await initPeerConnection()
 
@@ -234,8 +234,8 @@ socket.on("call-made", async data => {
         audio: true
     }
 
-    await startLocalVideo(constraints)
-    // await startLocalVideo()
+    // await startLocalVideo(constraints)
+    await startLocalVideo()
 
     await initPeerConnection()
 
