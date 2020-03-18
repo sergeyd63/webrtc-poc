@@ -38,14 +38,14 @@ body {
 .content-container {
   width          : 100%;
   height         : calc(100vh - 89px);
-  display        : flex;
+  /* display        : flex; */
   justify-content: space-between;
   overflow       : hidden;
 }
 
 .active-users-panel {
-  width       : 300px;
-  height      : 100%;
+  /* width       : 300px; */
+  /* height      : 100%; */
   border-right: 1px solid #cddfe7;
   overflow: auto;
 }
@@ -81,7 +81,7 @@ body {
 .video-container {
   display       : flex;
   flex-direction: column;
-  /* width: 100%; */
+  width: 100%;
 }
 
 .video-chat-container {
@@ -109,5 +109,5 @@ body {
   right        : 40px;
   box-shadow   : 0px 3px 6px rgba(0, 0, 0, 0.2);
   border-radius: 5px;
-  width        : 300px;
+  width        : 200px;
 }

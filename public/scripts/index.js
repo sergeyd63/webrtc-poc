@@ -19,7 +19,12 @@ let peerConnection = undefined
 
 let videoConstraints = { audio: true, video: true }
 let currentStream = undefined
+let cameraOn = false
 const activeUserContainer = document.getElementById("active-user-container");
+const toggleCamera = document.getElementById('toggleCamera')
+toggleCamera.addEventListener('click', toggleVideo)
+
+const toggleMic = document.getElementById('toggleMic')
 
 function logEvents(...vals) {
     if (logElement) {
@@ -97,7 +102,7 @@ async function initPeerConnection() {
     // };
 
     currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
-
+    cameraOn = true
     // peerConnection.onnegotiationneeded = function () {
     //     peerConnection.createOffer().then(function (offer) {
     //         logEvents(`peerConnection - Set offer: ${offer}`)
@@ -193,8 +198,8 @@ async function callUser(socketId) {
         audio: true
     }
 
-    // await startLocalVideo(constraints)
-    await startLocalVideo()
+    await startLocalVideo(constraints)
+    // await startLocalVideo()
 
     peerConnection = await initPeerConnection()
 
@@ -229,8 +234,8 @@ socket.on("call-made", async data => {
         audio: true
     }
 
-    // await startLocalVideo(constraints)
-    await startLocalVideo()
+    await startLocalVideo(constraints)
+    // await startLocalVideo()
 
     await initPeerConnection()
 
@@ -366,5 +371,20 @@ callBtn.addEventListener('click', (e) => {
 
     callUser(userId)
 })
+
+function toggleVideo(close) {
+    if (cameraOn) {
+        currentStream.getTracks().forEach(function (track) {
+            track.stop();
+            // console.log('track enabled', track.enabled)
+            // track.enabled = !track.enabled
+        });
+    }
+    else {
+        currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+    }
+    cameraOn = !cameraOn
+}
+
 
 // startLocalVideo()

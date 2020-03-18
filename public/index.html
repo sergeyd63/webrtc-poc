@@ -14,20 +14,24 @@
     <div class="container">
         <div class="active-users-panel" id="active-user-container">
         </div>
-        <div class="active-users-panel">
+        <div class="active-users-panel" style="display: flex;">
             <input id="call-to" />
-            <div id="call-btn">Call</div>
+            <div id="call-btn" style="cursor: pointer; background-color: aqua;">Call</div>
         </div>
         <div class="content-container">
             <div class="video-chat-container">
                 <div class="video-container">
-                    <div style="display: flex;">
+                    <div style="position: relative; display: flex;">
                         <video autoplay class="remote-video" id="remote-video"></video>
                         <div id="disconnect-remote" style="cursor: pointer;">Close Call</div>
-                    </div>
-                    <div style="display: flex;">
-                        <video autoplay muted class="local-video" id="local-video"></video>
-                        <div id="disconnect-local" style="cursor: pointer;">Close Camera</div>
+                        <div style="position:absolute; bottom: 1px; right: 80px;">
+                            <video autoplay muted class="local-video" id="local-video"></video>
+                            <div id="disconnect-local"
+                                style="cursor: pointer; position: absolute; bottom: 2px; left: 50%;">
+                                <span id="toggleCamera">C</span>
+                                <span id="toggleMic">M</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -43,7 +47,7 @@
             <!-- <h2 class="talk-info" id="talking-with-info">
                 Select active user on the left menu.
             </h2> -->
-          
+
         </div>
     </div>
     <script src="./scripts/index.js"></script>
