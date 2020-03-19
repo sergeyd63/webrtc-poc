@@ -20,11 +20,18 @@ let peerConnection = undefined
 let videoConstraints = { audio: true, video: true }
 let currentStream = undefined
 let cameraOn = false
-const activeUserContainer = document.getElementById("active-user-container");
+const activeUserContainer = document.getElementById("myId");
+const myName = document.querySelector('#myName input')
+const saveName = document.getElementById('saveBtn')
+const userListSelect = document.getElementById('userListSelect')
+
 const toggleCamera = document.getElementById('toggleCamera')
 toggleCamera.addEventListener('click', toggleVideo)
 
 const toggleMic = document.getElementById('toggleMic')
+
+
+myName.value = sessionStorage.getItem('myName')
 
 function logEvents(...vals) {
     if (logElement) {
@@ -156,16 +163,25 @@ async function initPeerConnection() {
     return peerConnection
 }
 
-// function updateUserList(socketIds) {
-// socketIds.forEach(socketId => {
-//     const alreadyExistingUser = document.getElementById(socketId);
-//     if (!alreadyExistingUser) {
-//         const userContainerEl = createUserItemContainer(socketId);
+function updateUserList(socketIds, userNames) {
+    console.log('updated lists', socketIds, userNames)
+    userNames.forEach(user => {
+        const alreadyExistingUser = document.getElementById(user.socketId);
+        alreadyExistingUser && alreadyExistingUser.remove()
+        // if (!alreadyExistingUser) {
+            // const userContainerEl = createUserItemContainer(socketId);
 
-//         activeUserContainer.appendChild(userContainerEl);
-//     }
-// });
-// }
+            const option = document.createElement('option');
+            option.id = user.socketId
+            option.value = user.socketId;
+            const textNode = document.createTextNode(user.name);
+            option.appendChild(textNode);
+            userListSelect.appendChild(option);
+
+            // userListSelect.appendChild(userContainerEl);
+        // }
+    });
+}
 
 // const socket = io.connect("192.168.2.15:5050");
 // const socket = io.connect("localhost:5050");
@@ -173,24 +189,32 @@ async function initPeerConnection() {
 const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
-    console.log('socket id', socket.id)
+    console.log('socket id', socket.id, myName.value)
     activeUserContainer.innerHTML = `My id: <strong>${socket.id}</strong>`
+
+    socket.emit("username-update", {
+        socketId: socket.id,
+        name: myName.value
+    })
 })
 
+socket.on('userlist-update', userList => {
+    console.log('user list', userList)
+})
 
-socket.on("update-user-list", ({ users }) => {
-    console.log(users)
-    const userInput = document.getElementById('call-to')
-    userInput.value = users[users.length - 1]
-    // updateUserList(users);
+socket.on("update-user-list", ({ users, userNames }) => {
+    // console.log('socket list', users, userNames)
+    // const userInput = document.getElementById('call-to')
+    // userInput.value = users[users.length - 1]
+    updateUserList(users, userNames);
 });
 
 socket.on("remove-user", ({ socketId }) => {
-    // const elToRemove = document.getElementById(socketId);
+    const elToRemove = document.getElementById(socketId);
 
-    // if (elToRemove) {
-    //     elToRemove.remove();
-    // }
+    if (elToRemove) {
+        elToRemove.remove();
+    }
 });
 
 async function callUser(socketId) {
@@ -292,7 +316,7 @@ const getAllDevices = async function () {
         fd.forEach(mediaDevice => {
             const option = document.createElement('option');
             option.value = mediaDevice.deviceId;
-            const label = mediaDevice.label || `Camera ${count++}`;
+            // const label = mediaDevice.label || `Camera ${count++}`;
             const textNode = document.createTextNode(label);
             option.appendChild(textNode);
             deviceList.appendChild(option);
@@ -367,8 +391,9 @@ disc.addEventListener('click', () => {
 
 const callBtn = document.getElementById('call-btn')
 callBtn.addEventListener('click', (e) => {
-    const userId = document.getElementById('call-to').value
-    console.log(userId)
+    // const userId = document.getElementById('call-to').value
+    const userId = document.getElementById('userListSelect').value
+    console.log('selected', userId)
 
     callUser(userId)
 })
@@ -387,5 +412,12 @@ function toggleVideo(close) {
     cameraOn = !cameraOn
 }
 
+saveName.addEventListener('click', (e) => {
+    sessionStorage.setItem('myName', myName.value)
+    socket.emit("username-update", {
+        socketId: socket.id,
+        name: myName.value
+    })
+})
 
 // startLocalVideo()

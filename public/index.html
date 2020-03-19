@@ -13,9 +13,17 @@
 <body>
     <div class="container">
         <div class="active-users-panel" id="active-user-container">
+            <div id="myId"></div>
+            <div id="myName" style="display: flex;">
+                <input />
+                <div id="saveBtn" style="cursor: pointer; background-color: aqua;">Save</div>
+            </div>
         </div>
         <div class="active-users-panel" style="display: flex;">
-            <input id="call-to" />
+            <!-- <input id="call-to" /> -->
+            <select id="userListSelect">
+                <option></option>
+            </select>
             <div id="call-btn" style="cursor: pointer; background-color: aqua;">Call</div>
         </div>
         <div class="content-container">
