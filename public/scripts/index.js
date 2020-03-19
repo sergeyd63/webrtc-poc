@@ -31,7 +31,7 @@ toggleCamera.addEventListener('click', toggleVideo)
 const toggleMic = document.getElementById('toggleMic')
 
 
-myName.value = sessionStorage.getItem('myName')
+myName.value = localStorage.getItem('myName')
 
 function logEvents(...vals) {
     if (logElement) {
@@ -194,7 +194,7 @@ socket.on('connect', () => {
 
     socket.emit("username-update", {
         socketId: socket.id,
-        name: myName.value
+        name: myName.value || socket.id
     })
 })
 
@@ -203,10 +203,10 @@ socket.on('userlist-update', userList => {
 })
 
 socket.on("update-user-list", ({ users, userNames }) => {
-    // console.log('socket list', users, userNames)
+    console.log('socket list', users, userNames)
     // const userInput = document.getElementById('call-to')
     // userInput.value = users[users.length - 1]
-    updateUserList(users, userNames);
+    userNames && updateUserList(users, userNames);
 });
 
 socket.on("remove-user", ({ socketId }) => {
@@ -413,10 +413,10 @@ function toggleVideo(close) {
 }
 
 saveName.addEventListener('click', (e) => {
-    sessionStorage.setItem('myName', myName.value)
+    localStorage.setItem('myName', myName.value)
     socket.emit("username-update", {
         socketId: socket.id,
-        name: myName.value
+        name: myName.value || socket.id
     })
 })
 
