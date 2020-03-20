@@ -24,6 +24,7 @@ const activeUserContainer = document.getElementById("myId");
 const myName = document.querySelector('#myName input')
 const saveName = document.getElementById('saveBtn')
 const userListSelect = document.getElementById('userListSelect')
+const userListDiv = document.getElementById('userListDiv')
 
 const toggleCamera = document.getElementById('toggleCamera')
 toggleCamera.addEventListener('click', toggleVideo)
@@ -180,27 +181,36 @@ async function initPeerConnection() {
 function updateUserList(socketIds, userNames) {
     console.log('updated lists', socketIds, userNames)
     userNames.forEach(user => {
-        const alreadyExistingUser = document.getElementById(user.socketId);
-        alreadyExistingUser && alreadyExistingUser.remove()
+        // const alreadyExistingUser = document.getElementById(user.socketId);
+        // alreadyExistingUser && alreadyExistingUser.remove()
         // if (!alreadyExistingUser) {
         // const userContainerEl = createUserItemContainer(socketId);
+        const existingU = userListDiv.querySelector(`div[socket='${user.socketId}']`)
+        existingU && existingU.remove()
 
-        const option = document.createElement('option');
-        option.id = user.socketId
-        option.value = user.socketId;
-        const textNode = document.createTextNode(user.name);
-        option.appendChild(textNode);
-        userListSelect.appendChild(option);
+        // const option = document.createElement('option');
+        // option.id = user.socketId
+        // option.value = user.socketId;
+        // const textNode = document.createTextNode(user.name);
+        // option.appendChild(textNode);
+        // userListSelect.appendChild(option);
 
-        // userListSelect.appendChild(userContainerEl);
+
+        const userDiv = document.createElement('div')
+        userDiv.classList.add('call-user-btn')
+        userDiv.setAttribute('socket', user.socketId)
+        userDiv.innerHTML = user.name
+        userDiv.addEventListener('click', callClickedUser)
+
+        userListDiv.appendChild(userDiv);
         // }
     });
 }
 
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     console.log('socket id', socket.id, myName.value)
@@ -225,6 +235,9 @@ socket.on("update-user-list", ({ users, userNames }) => {
 
 socket.on("remove-user", ({ socketId }) => {
     const elToRemove = document.getElementById(socketId);
+    const existingU = userListDiv.querySelector(`div[socket='${socketId}']`)
+
+    existingU && existingU.remove()
 
     if (elToRemove) {
         elToRemove.remove();
@@ -403,14 +416,20 @@ disc.addEventListener('click', () => {
     socket.emit("hangup-all")
 })
 
-const callBtn = document.getElementById('call-btn')
-callBtn.addEventListener('click', (e) => {
-    // const userId = document.getElementById('call-to').value
-    const userId = document.getElementById('userListSelect').value
-    console.log('selected', userId)
+// const callBtn = document.getElementById('call-btn')
+// callBtn.addEventListener('click', (e) => {
+//     // const userId = document.getElementById('call-to').value
+//     const userId = document.getElementById('userListSelect').value
+//     console.log('selected', userId)
 
-    callUser(userId)
-})
+//     callUser(userId)
+// })
+
+function callClickedUser (e) {
+    const selectedSocket = e.target.getAttribute('socket')
+
+    callUser(selectedSocket)
+}
 
 function toggleVideo(close) {
     if (!currentStream) {
