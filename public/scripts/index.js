@@ -83,11 +83,23 @@ async function initPeerConnection() {
         return peerConnection
     }
     peerConnection = await new RTCPeerConnection({
-        iceServers: [     // Information about ICE servers - Use your own!
+        iceServers: [
+            // {
+            //     urls: "stun:stun.services.mozilla.com",
+            //     username: "louis@mozilla.com",
+            //     credential: "webrtcdemo"
+            // },
             {
-                urls: "stun:stun.stunprotocol.org"
-            }
-        ]
+                urls: [
+                    "stun:stun.l.google.com:19302",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302",
+                    "stun:stun.example.com",
+                    "stun:stun-1.example.com"
+                ]
+            }]
     });
 
     peerConnection.ontrack = function ({ streams: [stream] }) {
@@ -107,7 +119,9 @@ async function initPeerConnection() {
     //         // All ICE candidates have been sent
     //     }
     // };
-
+    if (!currentStream) {
+        return peerConnection
+    }
     currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
     cameraOn = true
     // peerConnection.onnegotiationneeded = function () {
@@ -169,16 +183,16 @@ function updateUserList(socketIds, userNames) {
         const alreadyExistingUser = document.getElementById(user.socketId);
         alreadyExistingUser && alreadyExistingUser.remove()
         // if (!alreadyExistingUser) {
-            // const userContainerEl = createUserItemContainer(socketId);
+        // const userContainerEl = createUserItemContainer(socketId);
 
-            const option = document.createElement('option');
-            option.id = user.socketId
-            option.value = user.socketId;
-            const textNode = document.createTextNode(user.name);
-            option.appendChild(textNode);
-            userListSelect.appendChild(option);
+        const option = document.createElement('option');
+        option.id = user.socketId
+        option.value = user.socketId;
+        const textNode = document.createTextNode(user.name);
+        option.appendChild(textNode);
+        userListSelect.appendChild(option);
 
-            // userListSelect.appendChild(userContainerEl);
+        // userListSelect.appendChild(userContainerEl);
         // }
     });
 }
@@ -372,7 +386,7 @@ const startLocalVideo = async function (constraints = videoConstraints) {
 function disconnect(stream, hangUp = false) {
     logEvents('DISCONNECT')
 
-    stream.getTracks().forEach(function (track) {
+    stream && stream.getTracks().forEach(function (track) {
         track.stop();
     });
 
@@ -399,6 +413,10 @@ callBtn.addEventListener('click', (e) => {
 })
 
 function toggleVideo(close) {
+    if (!currentStream) {
+        return
+    }
+
     if (cameraOn) {
         currentStream.getTracks().forEach(function (track) {
             track.stop();
