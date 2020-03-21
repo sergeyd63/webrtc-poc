@@ -80,7 +80,7 @@ function createUserItemContainer(socketId) {
 }
 
 async function initPeerConnection(socketId) {
-
+    iceCandidates = []
 
     if (peerConnection) {
         return peerConnection
@@ -117,7 +117,7 @@ async function initPeerConnection(socketId) {
 
     peerConnection.onicecandidate = function (event) {
         if (event.candidate) {
-            // console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
+            console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
             // Send the candidate to the remote peer
             iceCandidates.push(event.candidate)
             // socket.emit('send-ice-candidate', {
