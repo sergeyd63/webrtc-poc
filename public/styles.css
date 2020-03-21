@@ -135,12 +135,12 @@ body {
 
 .video-btn {
   background-image: url(./img/vc.png);
-  opacity: 0;
+  opacity: .5;
 }
 
 .audio-btn {
   background-image: url(./img/mic1.png);
-  opacity: 0;
+  opacity: .5;
 }
 
 .call-btns {
