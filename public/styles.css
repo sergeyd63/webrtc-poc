@@ -115,7 +115,7 @@ body {
 }
 
 .call-user-btn {
-  min-width: 100px;
+  min-width: 200px;
   height: 30px;
   line-height: 30px;
   text-align: center;
@@ -125,8 +125,29 @@ body {
   border: 2px solid blue;
   border-radius: 8px;
   overflow: hidden;
+  display: flex;
 }
 
-.call-user-btn :hover {
-  background-color: aqua;
+.call-user-btn:hover .call-btns{
+  /* background-color: aqua; */
+  opacity: 1;
+}
+
+.video-btn {
+  background-image: url(./img/vc.png);
+  opacity: 0;
+}
+
+.audio-btn {
+  background-image: url(./img/mic1.png);
+  opacity: 0;
+}
+
+.call-btns {
+  height: 100%;
+  width: 20%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transition: opacity .4s;
 }

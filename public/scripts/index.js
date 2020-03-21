@@ -19,6 +19,7 @@ let peerConnection = undefined
 
 let videoConstraints = { audio: true, video: true }
 let currentStream = undefined
+let localStream = undefined
 let cameraOn = false
 const activeUserContainer = document.getElementById("myId");
 const myName = document.querySelector('#myName input')
@@ -78,12 +79,13 @@ function createUserItemContainer(socketId) {
 }
 
 async function initPeerConnection() {
-    console.log('initPeerConnection')
+
 
     if (peerConnection) {
         return peerConnection
     }
-    peerConnection = await new RTCPeerConnection({
+    console.log('initPeerConnection')
+    peerConnection = new RTCPeerConnection({
         iceServers: [
             // {
             //     urls: "stun:stun.services.mozilla.com",
@@ -98,7 +100,8 @@ async function initPeerConnection() {
                     "stun:stun3.l.google.com:19302",
                     "stun:stun4.l.google.com:19302",
                     "stun:stun.example.com",
-                    "stun:stun-1.example.com"
+                    "stun:stun-1.example.com",
+                    "stun:stun.stunprotocol.org"
                 ]
             }]
     });
@@ -198,9 +201,21 @@ function updateUserList(socketIds, userNames) {
 
         const userDiv = document.createElement('div')
         userDiv.classList.add('call-user-btn')
+        const nameSpan = document.createElement('div')
+        nameSpan.innerText = user.name
+        // userDiv.addEventListener('click', e => callClickedUser(e, 'video'))
         userDiv.setAttribute('socket', user.socketId)
-        userDiv.innerHTML = user.name
-        userDiv.addEventListener('click', callClickedUser)
+
+        const vDiv = document.createElement('div')
+        vDiv.classList.add('video-btn', 'call-btns')
+        vDiv.setAttribute('socket', user.socketId)
+        vDiv.addEventListener('click', e => callClickedUser(e, 'video'))
+        const aDiv = document.createElement('div')
+        aDiv.classList.add('audio-btn', 'call-btns')
+        aDiv.setAttribute('socket', user.socketId)
+        aDiv.addEventListener('click', e => callClickedUser(e, 'audio'))
+
+        userDiv.append(vDiv, nameSpan, aDiv)
 
         userListDiv.appendChild(userDiv);
         // }
@@ -208,12 +223,12 @@ function updateUserList(socketIds, userNames) {
 }
 
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
-    console.log('socket id', socket.id, myName.value)
+    console.log('My socket id', socket.id, myName.value)
     activeUserContainer.innerHTML = `My id: <strong>${socket.id}</strong>`
 
     socket.emit("username-update", {
@@ -235,8 +250,8 @@ socket.on("update-user-list", ({ users, userNames }) => {
 
 socket.on("remove-user", ({ socketId }) => {
     const elToRemove = document.getElementById(socketId);
-    const existingU = userListDiv.querySelector(`div[socket='${socketId}']`)
-
+    const existingU = userListDiv.querySelector(`.call-user-btn[socket='${socketId}']`)
+    console.log('remove user fired', socketId, existingU)
     existingU && existingU.remove()
 
     if (elToRemove) {
@@ -244,23 +259,31 @@ socket.on("remove-user", ({ socketId }) => {
     }
 });
 
-async function callUser(socketId) {
-    const constraints = {
-        video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
+async function callUser(socketId, type) {
+    // const constraints = {
+    //     video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
+    //     audio: true
+    // }
+
+    videoConstraints = {
+        video: type === 'video',
         audio: true
     }
-
+    console.log('constraint', videoConstraints)
     // await startLocalVideo(constraints)
-    await startLocalVideo()
+    await startLocalVideo(videoConstraints)
 
     peerConnection = await initPeerConnection()
-
+    console.log('after init peer connection')
     const offer = await peerConnection.createOffer();
+    console.log('after create offer')
     await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
+    console.log('after set local description')
 
     socket.emit("call-user", {
         offer,
-        to: socketId
+        to: socketId,
+        videoConstraints
     });
 }
 
@@ -281,13 +304,8 @@ socket.on("call-made", async data => {
         }
     }
 
-    const constraints = {
-        video: { deviceId: { exact: '3b23687e7adb835e497f8b937f975a9e470d3d83ab31e37a30c920a08fc6f3c9' } },
-        audio: true
-    }
-
-    // await startLocalVideo(constraints)
-    await startLocalVideo()
+    console.log('call made with constraints', data.videoConstraints)
+    await startLocalVideo(data.videoConstraints)
 
     await initPeerConnection()
 
@@ -299,7 +317,8 @@ socket.on("call-made", async data => {
 
     socket.emit("make-answer", {
         answer,
-        to: data.socket
+        to: data.socket,
+        isVideo: data.videoConstraints.video
     });
     getCalled = true;
 });
@@ -310,7 +329,7 @@ socket.on("answer-made", async data => {
     );
 
     if (!isAlreadyCalling) {
-        callUser(data.socket);
+        callUser(data.socket, data.isVideo ? 'video' : 'audio');
         isAlreadyCalling = true;
     }
 });
@@ -343,25 +362,22 @@ const getAllDevices = async function () {
         fd.forEach(mediaDevice => {
             const option = document.createElement('option');
             option.value = mediaDevice.deviceId;
-            // const label = mediaDevice.label || `Camera ${count++}`;
+            const label = mediaDevice.label || `Camera ${count++}`;
             const textNode = document.createTextNode(label);
             option.appendChild(textNode);
             deviceList.appendChild(option);
-            dList.innerHTML = `${dList.innerHTML} <br> id: ${mediaDevice.deviceId} <br> name: ${mediaDevice.label} `
+            dList.innerHTML = `${dList.innerHTML} <br> id: ${mediaDevice.deviceId} <br> name: ${mediaDevice.label} <br> kind: ${mediaDevice.kind}`
         });
 
-        deviceList.addEventListener('change', d => {
-            logEvents('Selection changed', d.target.value)
-            let videoConstraints = { deviceId: { exact: d.target.value } }
+        // deviceList.addEventListener('change', d => {
+            // logEvents('Selection changed', d.target.value)
+            // let videoConstraints = { deviceId: { exact: d.target.value } }
 
-            const constraints = {
-                video: videoConstraints,
-                audio: true
-            };
-            // disconnect(currentStream)
-
-            // startLocalVideo(constraints)
-        })
+            // const constraints = {
+            //     video: videoConstraints,
+            //     audio: true
+            // };
+        // })
 
     } catch (error) {
         logEvents(error.message, error.name)
@@ -373,8 +389,10 @@ const startLocalVideo = async function (constraints = videoConstraints) {
 
     try {
         currentStream = await navigator.mediaDevices.getUserMedia(constraints)
+        
         /* use the stream */
         const localVideo = document.getElementById("local-video");
+        console.log('start local video', constraints, localVideo)
         if (localVideo) {
             localVideo.srcObject = currentStream;
         }
@@ -425,10 +443,10 @@ disc.addEventListener('click', () => {
 //     callUser(userId)
 // })
 
-function callClickedUser (e) {
+function callClickedUser(e, type) {
     const selectedSocket = e.target.getAttribute('socket')
 
-    callUser(selectedSocket)
+    callUser(selectedSocket, type)
 }
 
 function toggleVideo(close) {
@@ -456,5 +474,3 @@ saveName.addEventListener('click', (e) => {
         name: myName.value || socket.id
     })
 })
-
-// startLocalVideo()

@@ -91,16 +91,19 @@ export class Server {
             });
 
             socket.on("call-user", (data: any) => {
+                console.log('call-user', data.to)
                 socket.to(data.to).emit("call-made", {
                     offer: data.offer,
-                    socket: socket.id
+                    socket: socket.id,
+                    videoConstraints: data.videoConstraints
                 });
             });
 
             socket.on("make-answer", data => {
                 socket.to(data.to).emit("answer-made", {
                     socket: socket.id,
-                    answer: data.answer
+                    answer: data.answer,
+                    isVideo: data.isVideo
                 });
             });
 
