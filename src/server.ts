@@ -110,7 +110,7 @@ export class Server {
 
             socket.on('send-ice-candidate', data => {
                 console.log('send ICE', data.to)
-                socket.emit('new-ice-candidate', {
+                socket.to(data.to).emit('new-ice-candidate', {
                     iceC: data.iceCandidate
                 })
             })

@@ -116,7 +116,7 @@ async function initPeerConnection() {
 
     peerConnection.onicecandidate = function (event) {
         if (event.candidate) {
-            console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
+            // console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
             // Send the candidate to the remote peer
             socket.emit('send-ice-candidate', {
                 iceCandidate: event.candidate,
