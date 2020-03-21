@@ -117,7 +117,7 @@ async function initPeerConnection(socketId) {
 
     peerConnection.onicecandidate = function (event) {
         if (event.candidate) {
-            console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
+            console.log(`peerConnection - Event candidate`, event.candidate)
             // Send the candidate to the remote peer
             iceCandidates.push(event.candidate)
             // socket.emit('send-ice-candidate', {
@@ -135,46 +135,46 @@ async function initPeerConnection(socketId) {
     currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
     cameraOn = true
 
-    // peerConnection.onnegotiationneeded = function () {
-    //     peerConnection.createOffer().then(function (offer) {
-    //         logEvents(`peerConnection - Set offer: ${offer}`)
-    //         return peerConnection.setLocalDescription(offer);
-    //     })
-    //         .then(function () {
-    //             logEvents(`peerConnection - Send offer promise`)
-    //             // Send the offer to the remote peer through the signaling server
-    //         });
-    // }
-    //   }
+    peerConnection.onnegotiationneeded = function () {
+        peerConnection.createOffer().then(function (offer) {
+            logEvents(`peerConnection - Set offer: ${offer}`)
+            return peerConnection.setLocalDescription(offer);
+        })
+            .then(function () {
+                logEvents(`peerConnection - Send offer promise`)
+                // Send the offer to the remote peer through the signaling server
+            });
+        // }
+    }
 
     // peerConnection.onremovetrack = handleRemoveTrackEvent;
-    // peerConnection.oniceconnectionstatechange = function (event) {
-    //     logEvents(`peerConnection - ICE connection state: ${peerConnection.iceConnectionState}`)
-    //     if (peerConnection.iceConnectionState === "failed" ||
-    //         peerConnection.iceConnectionState === "disconnected" ||
-    //         peerConnection.iceConnectionState === "closed") {
-    //         // Handle the failure
-    //     }
-    // };
+    peerConnection.oniceconnectionstatechange = function (event) {
+        console.log(`peerConnection - ICE connection state`, peerConnection.iceConnectionState)
+        if (peerConnection.iceConnectionState === "failed" ||
+            peerConnection.iceConnectionState === "disconnected" ||
+            peerConnection.iceConnectionState === "closed") {
+            // Handle the failure
+        }
+    };
 
-    // peerConnection.onicegatheringstatechange = function () {
-    //     let label = "Unknown";
-    //     logEvents(`peerConnection - ICE gathering state: ${peerConnection.iceGatheringState}`)
-    //     switch (peerConnection.iceGatheringState) {
-    //         case "new":
-    //         case "complete":
-    //             label = "Idle";
-    //             console.log('ICE gathering - new/complete')
-    //             break;
-    //         case "gathering":
-    //             label = "Determining route";
-    //             console.log('ICE gathering - gathering')
-    //             break;
-    //     }
+    peerConnection.onicegatheringstatechange = function () {
+        let label = "Unknown";
+        console.log(`peerConnection - ICE gathering state`, peerConnection.iceGatheringState)
+        switch (peerConnection.iceGatheringState) {
+            case "new":
+            case "complete":
+                label = "Idle";
+                console.log('ICE gathering - new/complete')
+                break;
+            case "gathering":
+                label = "Determining route";
+                console.log('ICE gathering - gathering')
+                break;
+        }
 
-    //     // document.getElementById("iceStatus").innerHTML = label;
+        // document.getElementById("iceStatus").innerHTML = label;
 
-    // }
+    }
 
     // peerConnection.onsignalingstatechange = function (event) {
     //     logEvents(`peerConnection - Signaling state: ${peerConnection.signalingState}`)
@@ -292,11 +292,11 @@ async function callUser(callToSocketId, type) {
     await startLocalVideo(videoConstraints)
 
     peerConnection = await initPeerConnection(callToSocketId)
-    console.log('after init peer connection')
+    // console.log('after init peer connection')
     const offer = await peerConnection.createOffer();
-    console.log('after create offer')
+    // console.log('after create offer')
     await peerConnection.setLocalDescription(new RTCSessionDescription(offer));
-    console.log('after set local description')
+    // console.log('after set local description')
 
     socket.emit("call-user", {
         offer,
@@ -332,12 +332,12 @@ socket.on("call-made", async data => {
         new RTCSessionDescription(data.offer)
     );
 
-    iceCandidates.forEach(candidate => {
-        socket.emit('send-ice-candidate', {
-            iceCandidate: candidate,
-            to: data.socket
-        })
-    })
+    // iceCandidates.forEach(candidate => {
+    //     socket.emit('send-ice-candidate', {
+    //         iceCandidate: candidate,
+    //         to: data.socket
+    //     })
+    // })
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
@@ -355,12 +355,12 @@ socket.on("answer-made", async data => {
         new RTCSessionDescription(data.answer)
     );
 
-    iceCandidates.forEach(candidate => {
-        socket.emit('send-ice-candidate', {
-            iceCandidate: candidate,
-            to: data.socket
-        })
-    })
+    // iceCandidates.forEach(candidate => {
+    //     socket.emit('send-ice-candidate', {
+    //         iceCandidate: candidate,
+    //         to: data.socket
+    //     })
+    // })
 
     if (!isAlreadyCalling) {
         callUser(data.socket, data.isVideo ? 'video' : 'audio');
