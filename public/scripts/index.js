@@ -114,20 +114,25 @@ async function initPeerConnection() {
         }
     };
 
-    // peerConnection.onicecandidate = function (event) {
-    //     if (event.candidate) {
-    //         logEvents(`peerConnection - Event candidate: ${event.candidate}`)
-    //         // Send the candidate to the remote peer
-    //     } else {
-    //         logEvents(`peerConnection - Event candidate: All ICE candidates have been sent`)
-    //         // All ICE candidates have been sent
-    //     }
-    // };
+    peerConnection.onicecandidate = function (event) {
+        if (event.candidate) {
+            console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
+            // Send the candidate to the remote peer
+            socket.emit('send-ice-candidate', {
+                iceCandidate: event.candidate,
+                to: socket.id
+            })
+        } else {
+            console.log(`peerConnection - Event candidate: All ICE candidates have been sent`)
+            // All ICE candidates have been sent
+        }
+    };
     if (!currentStream) {
         return peerConnection
     }
     currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
     cameraOn = true
+
     // peerConnection.onnegotiationneeded = function () {
     //     peerConnection.createOffer().then(function (offer) {
     //         logEvents(`peerConnection - Set offer: ${offer}`)
@@ -223,9 +228,9 @@ function updateUserList(socketIds, userNames) {
 }
 
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     console.log('My socket id', socket.id, myName.value)
@@ -235,6 +240,17 @@ socket.on('connect', () => {
         socketId: socket.id,
         name: myName.value || socket.id
     })
+})
+
+socket.on('new-ice-candidate', async data => {
+    console.log('new-ice-candidate')
+    try {
+        console.log('ICE recieved', data.iceC)
+        await peerConnection.addIceCandidate(data.iceC)
+    } catch (error) {
+        console.log('ice candidate FAILED', error)
+    }
+
 })
 
 socket.on('userlist-update', userList => {
@@ -283,7 +299,8 @@ async function callUser(socketId, type) {
     socket.emit("call-user", {
         offer,
         to: socketId,
-        videoConstraints
+        videoConstraints,
+        name: localStorage.getItem('myName') || socketId
     });
 }
 
@@ -292,7 +309,7 @@ socket.on("call-made", async data => {
     logEvents(`Get Called: ${getCalled}`)
     if (getCalled) {
         const confirmed = confirm(
-            `User "Socket: ${data.socket}" wants to call you. Do accept this call?`
+            `User "${data.name}" wants to call you. Do accept this call?`
         );
 
         if (!confirmed) {
@@ -370,13 +387,13 @@ const getAllDevices = async function () {
         });
 
         // deviceList.addEventListener('change', d => {
-            // logEvents('Selection changed', d.target.value)
-            // let videoConstraints = { deviceId: { exact: d.target.value } }
+        // logEvents('Selection changed', d.target.value)
+        // let videoConstraints = { deviceId: { exact: d.target.value } }
 
-            // const constraints = {
-            //     video: videoConstraints,
-            //     audio: true
-            // };
+        // const constraints = {
+        //     video: videoConstraints,
+        //     audio: true
+        // };
         // })
 
     } catch (error) {
@@ -389,7 +406,7 @@ const startLocalVideo = async function (constraints = videoConstraints) {
 
     try {
         currentStream = await navigator.mediaDevices.getUserMedia(constraints)
-        
+
         /* use the stream */
         const localVideo = document.getElementById("local-video");
         console.log('start local video', constraints, localVideo)

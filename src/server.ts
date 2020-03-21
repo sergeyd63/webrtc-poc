@@ -81,9 +81,9 @@ export class Server {
             socket.on("username-update", (data: any) => {
 
                 this.activeUsers[this.activeUsers.findIndex(user => user.socketId === data.socketId)].name = data.name
-                console.log('username update', this.activeUsers)
+                // console.log('username update', this.activeUsers)
 
-                console.log('find', this.activeUsers.find(user => user.socketId === socket.id))
+                // console.log('find', this.activeUsers.find(user => user.socketId === socket.id))
                 socket.broadcast.emit("update-user-list", {
                     users: [socket.id],
                     userNames: [this.activeUsers.find(user => user.socketId === socket.id)]
@@ -95,7 +95,8 @@ export class Server {
                 socket.to(data.to).emit("call-made", {
                     offer: data.offer,
                     socket: socket.id,
-                    videoConstraints: data.videoConstraints
+                    videoConstraints: data.videoConstraints,
+                    name: data.name
                 });
             });
 
@@ -106,6 +107,13 @@ export class Server {
                     isVideo: data.isVideo
                 });
             });
+
+            socket.on('send-ice-candidate', data => {
+                console.log('send ICE', data.to)
+                socket.emit('new-ice-candidate', {
+                    iceC: data.iceCandidate
+                })
+            })
 
             socket.on("reject-call", data => {
                 socket.to(data.from).emit("call-rejected", {
