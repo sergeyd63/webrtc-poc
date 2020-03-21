@@ -78,7 +78,7 @@ function createUserItemContainer(socketId) {
     // return userContainerEl;
 }
 
-async function initPeerConnection() {
+async function initPeerConnection(socketId) {
 
 
     if (peerConnection) {
@@ -120,7 +120,7 @@ async function initPeerConnection() {
             // Send the candidate to the remote peer
             socket.emit('send-ice-candidate', {
                 iceCandidate: event.candidate,
-                to: socket.id
+                to: socketId
             })
         } else {
             console.log(`peerConnection - Event candidate: All ICE candidates have been sent`)
@@ -226,7 +226,7 @@ function updateUserList(socketIds, userNames) {
         // }
     });
 }
-
+/**************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
 // const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
@@ -275,7 +275,7 @@ socket.on("remove-user", ({ socketId }) => {
     }
 });
 
-async function callUser(socketId, type) {
+async function callUser(callToSocketId, type) {
     // const constraints = {
     //     video: { deviceId: { exact: 'a5ea918c1e49282103b621c4276fa26fc968846ab1f78871d385bb6bab746d2a' } },
     //     audio: true
@@ -289,7 +289,7 @@ async function callUser(socketId, type) {
     // await startLocalVideo(constraints)
     await startLocalVideo(videoConstraints)
 
-    peerConnection = await initPeerConnection()
+    peerConnection = await initPeerConnection(callToSocketId)
     console.log('after init peer connection')
     const offer = await peerConnection.createOffer();
     console.log('after create offer')
@@ -298,9 +298,9 @@ async function callUser(socketId, type) {
 
     socket.emit("call-user", {
         offer,
-        to: socketId,
+        to: callToSocketId,
         videoConstraints,
-        name: localStorage.getItem('myName') || socketId
+        name: localStorage.getItem('myName') || callToSocketId
     });
 }
 
@@ -324,7 +324,7 @@ socket.on("call-made", async data => {
     console.log('call made with constraints', data.videoConstraints)
     await startLocalVideo(data.videoConstraints)
 
-    await initPeerConnection()
+    await initPeerConnection(data.socket)
 
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.offer)
