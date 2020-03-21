@@ -228,9 +228,9 @@ function updateUserList(socketIds, userNames) {
 }
 
 // const socket = io.connect("192.168.2.15:5050");
-const socket = io.connect("localhost:5050");
+// const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-// const socket = io.connect("https://videotest.dev.zebu.io/");
+const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     console.log('My socket id', socket.id, myName.value)
