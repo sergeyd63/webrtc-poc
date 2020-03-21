@@ -126,6 +126,7 @@ body {
   border-radius: 8px;
   overflow: hidden;
   display: flex;
+  justify-content: space-around;
 }
 
 .call-user-btn:hover .call-btns{
