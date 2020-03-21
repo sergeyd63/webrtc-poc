@@ -26,6 +26,7 @@ const myName = document.querySelector('#myName input')
 const saveName = document.getElementById('saveBtn')
 const userListSelect = document.getElementById('userListSelect')
 const userListDiv = document.getElementById('userListDiv')
+let iceCandidates = []
 
 const toggleCamera = document.getElementById('toggleCamera')
 toggleCamera.addEventListener('click', toggleVideo)
@@ -118,10 +119,11 @@ async function initPeerConnection(socketId) {
         if (event.candidate) {
             // console.log(`peerConnection - Event candidate`, event.candidate, event.candidate.toJSON)
             // Send the candidate to the remote peer
-            socket.emit('send-ice-candidate', {
-                iceCandidate: event.candidate,
-                to: socketId
-            })
+            iceCandidates.push(event.candidate)
+            // socket.emit('send-ice-candidate', {
+            //     iceCandidate: event.candidate,
+            //     to: socketId
+            // })
         } else {
             console.log(`peerConnection - Event candidate: All ICE candidates have been sent`)
             // All ICE candidates have been sent
@@ -228,9 +230,9 @@ function updateUserList(socketIds, userNames) {
 }
 /**************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     console.log('My socket id', socket.id, myName.value)
@@ -304,7 +306,7 @@ async function callUser(callToSocketId, type) {
     });
 }
 
-// accept call 
+// accept or not call 
 socket.on("call-made", async data => {
     logEvents(`Get Called: ${getCalled}`)
     if (getCalled) {
@@ -329,21 +331,37 @@ socket.on("call-made", async data => {
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.offer)
     );
+
+    iceCandidates.forEach(candidate => {
+        socket.emit('send-ice-candidate', {
+            iceCandidate: candidate,
+            to: data.socket
+        })
+    })
+
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
 
     socket.emit("make-answer", {
         answer,
         to: data.socket,
-        isVideo: data.videoConstraints.video
+        isVideo: data.videoConstraints.video,
+        from: socket.id
     });
     getCalled = true;
 });
-// accept answer
+// accepted answer
 socket.on("answer-made", async data => {
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.answer)
     );
+
+    iceCandidates.forEach(candidate => {
+        socket.emit('send-ice-candidate', {
+            iceCandidate: candidate,
+            to: data.socket
+        })
+    })
 
     if (!isAlreadyCalling) {
         callUser(data.socket, data.isVideo ? 'video' : 'audio');
