@@ -115,7 +115,8 @@ body {
 }
 
 .call-user-btn {
-  min-width: 200px;
+  /* min-width: 200px; */
+  width: 180px;
   height: 30px;
   line-height: 30px;
   text-align: center;

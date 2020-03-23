@@ -96,15 +96,20 @@ async function initPeerConnection(socketId) {
             //     credential: "webrtcdemo"
             // },
             {
+                url: 'turn:numb.viagenie.ca',
+                credential: 'muazkh',
+                username: 'webrtc@live.com'
+            },
+            {
                 urls: [
                     "stun:stun.l.google.com:19302",
-                    // "stun:stun1.l.google.com:19302",
-                    // "stun:stun2.l.google.com:19302",
-                    // "stun:stun3.l.google.com:19302",
-                    // "stun:stun4.l.google.com:19302",
-                    // "stun:stun.example.com",
+                    "stun:stun1.l.google.com:19302",
+                    "stun:stun2.l.google.com:19302",
+                    "stun:stun3.l.google.com:19302",
+                    "stun:stun4.l.google.com:19302",
+                    "stun:stun.example.com",
                     // "stun:stun-1.example.com",
-                    // "stun:stun.stunprotocol.org"
+                    "stun:stun.stunprotocol.org"
                 ]
             }]
     });
@@ -232,9 +237,9 @@ function updateUserList(socketIds, userNames) {
 }
 /****************************************************************************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     // console.log('My socket id', socket.id, myName.value)
@@ -249,7 +254,7 @@ socket.on('connect', () => {
 socket.on('new-ice-candidate', async data => {
     console.log('--- new-ice-candidate')
     try {
-        console.log('ICE recieved', data.iceC)
+        console.log('ICE recieved', data.iceC.candidate)
         await peerConnection.addIceCandidate(data.iceC)
     } catch (error) {
         console.log('ice candidate FAILED', error)
