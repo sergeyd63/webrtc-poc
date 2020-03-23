@@ -80,10 +80,12 @@ function createUserItemContainer(socketId) {
 }
 
 async function initPeerConnection(socketId) {
-    iceCandidates = []
-
     if (peerConnection) {
+
         return peerConnection
+    }
+    else {
+        iceCandidates = []
     }
     console.log('initPeerConnection')
     peerConnection = new RTCPeerConnection({
@@ -117,7 +119,7 @@ async function initPeerConnection(socketId) {
 
     peerConnection.onicecandidate = function (event) {
         if (event.candidate) {
-            console.log(`peerConnection - Event candidate`, event.candidate)
+            //console.log(`peerConnection - Event candidate`, event.candidate)
             // Send the candidate to the remote peer
             iceCandidates.push(event.candidate)
             // socket.emit('send-ice-candidate', {
@@ -125,7 +127,7 @@ async function initPeerConnection(socketId) {
             //     to: socketId
             // })
         } else {
-            console.log(`peerConnection - Event candidate: All ICE candidates have been sent`)
+            console.log(`peerConnection - Event candidate: All ICE candidates have been collected`, iceCandidates)
             // All ICE candidates have been sent
         }
     };
@@ -135,17 +137,17 @@ async function initPeerConnection(socketId) {
     currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
     cameraOn = true
 
-    peerConnection.onnegotiationneeded = function () {
-        peerConnection.createOffer().then(function (offer) {
-            logEvents(`peerConnection - Set offer: ${offer}`)
-            return peerConnection.setLocalDescription(offer);
-        })
-            .then(function () {
-                logEvents(`peerConnection - Send offer promise`)
-                // Send the offer to the remote peer through the signaling server
-            });
-        // }
-    }
+    // peerConnection.onnegotiationneeded = function () {
+    //     peerConnection.createOffer().then(function (offer) {
+    //         console.log(`peerConnection - Set offer`, offer)
+    //         return peerConnection.setLocalDescription(offer);
+    //     })
+    //         .then(function () {
+    //             logEvents(`peerConnection - Send offer promise`)
+    //             // Send the offer to the remote peer through the signaling server
+    //         });
+    //     // }
+    // }
 
     // peerConnection.onremovetrack = handleRemoveTrackEvent;
     peerConnection.oniceconnectionstatechange = function (event) {
@@ -189,7 +191,7 @@ async function initPeerConnection(socketId) {
 }
 
 function updateUserList(socketIds, userNames) {
-    console.log('updated lists', socketIds, userNames)
+    // console.log('updated lists', socketIds, userNames)
     userNames.forEach(user => {
         // const alreadyExistingUser = document.getElementById(user.socketId);
         // alreadyExistingUser && alreadyExistingUser.remove()
@@ -228,14 +230,14 @@ function updateUserList(socketIds, userNames) {
         // }
     });
 }
-/**************************************************************/
+/****************************************************************************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
 // const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
 const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
-    console.log('My socket id', socket.id, myName.value)
+    // console.log('My socket id', socket.id, myName.value)
     activeUserContainer.innerHTML = `My id: <strong>${socket.id}</strong>`
 
     socket.emit("username-update", {
@@ -245,7 +247,7 @@ socket.on('connect', () => {
 })
 
 socket.on('new-ice-candidate', async data => {
-    console.log('new-ice-candidate')
+    console.log('--- new-ice-candidate')
     try {
         console.log('ICE recieved', data.iceC)
         await peerConnection.addIceCandidate(data.iceC)
@@ -260,7 +262,7 @@ socket.on('userlist-update', userList => {
 })
 
 socket.on("update-user-list", ({ users, userNames }) => {
-    console.log('socket list', users, userNames)
+    // console.log('socket list', users, userNames)
     // const userInput = document.getElementById('call-to')
     // userInput.value = users[users.length - 1]
     userNames && updateUserList(users, userNames);
@@ -269,7 +271,7 @@ socket.on("update-user-list", ({ users, userNames }) => {
 socket.on("remove-user", ({ socketId }) => {
     const elToRemove = document.getElementById(socketId);
     const existingU = userListDiv.querySelector(`.call-user-btn[socket='${socketId}']`)
-    console.log('remove user fired', socketId, existingU)
+    // console.log('remove user fired', socketId, existingU)
     existingU && existingU.remove()
 
     if (elToRemove) {
@@ -287,7 +289,7 @@ async function callUser(callToSocketId, type) {
         video: type === 'video',
         audio: true
     }
-    console.log('constraint', videoConstraints)
+    // console.log('constraint', videoConstraints)
     // await startLocalVideo(constraints)
     await startLocalVideo(videoConstraints)
 
@@ -323,7 +325,7 @@ socket.on("call-made", async data => {
         }
     }
 
-    console.log('call made with constraints', data.videoConstraints)
+    // console.log('call made with constraints', data.videoConstraints)
     await startLocalVideo(data.videoConstraints)
 
     await initPeerConnection(data.socket)
@@ -332,15 +334,17 @@ socket.on("call-made", async data => {
         new RTCSessionDescription(data.offer)
     );
 
-    // iceCandidates.forEach(candidate => {
-    //     socket.emit('send-ice-candidate', {
-    //         iceCandidate: candidate,
-    //         to: data.socket
-    //     })
-    // })
+
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
+    console.log('all target ICE candidates', iceCandidates)
+    iceCandidates.forEach(candidate => {
+        socket.emit('send-ice-candidate', {
+            iceCandidate: candidate,
+            to: data.socket
+        })
+    })
 
     socket.emit("make-answer", {
         answer,
@@ -354,13 +358,13 @@ socket.on("answer-made", async data => {
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.answer)
     );
-
-    // iceCandidates.forEach(candidate => {
-    //     socket.emit('send-ice-candidate', {
-    //         iceCandidate: candidate,
-    //         to: data.socket
-    //     })
-    // })
+    console.log('all origin ICE candidates', iceCandidates)
+    iceCandidates.forEach(candidate => {
+        socket.emit('send-ice-candidate', {
+            iceCandidate: candidate,
+            to: data.socket
+        })
+    })
 
     if (!isAlreadyCalling) {
         callUser(data.socket, data.isVideo ? 'video' : 'audio');
@@ -385,7 +389,7 @@ const getAllDevices = async function () {
 
         const fd = devices.filter(d => d.kind === 'videoinput')
 
-        console.log(fd)
+        // console.log(fd)
 
         const deviceList = document.getElementById('devices')
         deviceList.innerHTML = '';
@@ -396,7 +400,7 @@ const getAllDevices = async function () {
         fd.forEach(mediaDevice => {
             const option = document.createElement('option');
             option.value = mediaDevice.deviceId;
-            const label = mediaDevice.label || `Camera ${count++}`;
+            const label = mediaDevice.label || `Camera`;
             const textNode = document.createTextNode(label);
             option.appendChild(textNode);
             deviceList.appendChild(option);
@@ -414,7 +418,7 @@ const getAllDevices = async function () {
         // })
 
     } catch (error) {
-        logEvents(error.message, error.name)
+        console.log('get all devices exception', error.message, error.name)
     }
 }
 getAllDevices()
@@ -426,7 +430,7 @@ const startLocalVideo = async function (constraints = videoConstraints) {
 
         /* use the stream */
         const localVideo = document.getElementById("local-video");
-        console.log('start local video', constraints, localVideo)
+        // console.log('start local video', constraints, localVideo)
         if (localVideo) {
             localVideo.srcObject = currentStream;
         }
