@@ -96,7 +96,7 @@ async function initPeerConnection(socketId) {
             //     credential: "webrtcdemo"
             // },
             {
-                url: 'turn:numb.viagenie.ca',
+                urls: 'turn:numb.viagenie.ca',
                 credential: 'muazkh',
                 username: 'webrtc@live.com'
             },
@@ -155,8 +155,55 @@ async function initPeerConnection(socketId) {
     // }
 
     // peerConnection.onremovetrack = handleRemoveTrackEvent;
-    peerConnection.oniceconnectionstatechange = function (event) {
+    peerConnection.oniceconnectionstatechange = async function (event) {
         console.log(`peerConnection - ICE connection state`, peerConnection.iceConnectionState)
+        switch (peerConnection.iceConnectionState) {
+            case 'connected':
+                // case 'completed':
+                let candidatePair = []
+                let candidateList = []
+                const statsDiv = document.getElementById('stats')
+                // setInterval(async () => {
+                const stats = await peerConnection.getStats();
+                stats.forEach(stat => {
+                    if (stat.type === 'candidate-pair') {
+                        const exists = candidatePair.find(cp => cp.id === stat.id)
+                        !exists && candidatePair.push(stat)
+                        // console.log('ICE STAT', stat)
+                    }
+                    else if (stat.type === 'remote-candidate' || stat.type === 'local-candidate') {
+                        console.log(stat)
+                        const cExist = candidateList.find(c => c.id === stat.id)
+                        if (!cExist) {
+                            candidateList.push(stat)
+                        }
+                    }
+                })
+
+                candidatePair.forEach(pair => {
+                    const ids = pair.id.split('_')
+
+                    let c1 = candidateList.find(c => c.id.split('_')[1] === ids[1])
+                    let c2 = candidateList.find(c => c.id.split('_')[1] === ids[2])
+                    console.log('Candidate Pair', pair, c1, c2)
+                    let pairDiv = document.getElementById(pair.id)
+                    if (!pairDiv) {
+                        pairDiv = document.createElement('div')
+                        pairDiv.id = pair.id
+                        statsDiv.append(pairDiv)
+                    }
+                    let c1Div = document.getElementById()
+
+                    pairDiv.innerHTML = JSON.stringify(pair)
+                })
+                // }, 1000)
+                // console.log(peerConnection.iceConnectionState)
+
+                break;
+
+            default:
+                break;
+        }
         if (peerConnection.iceConnectionState === "failed" ||
             peerConnection.iceConnectionState === "disconnected" ||
             peerConnection.iceConnectionState === "closed") {
