@@ -216,6 +216,7 @@ function updateUserList(socketIds, userNames) {
         const userDiv = document.createElement('div')
         userDiv.classList.add('call-user-btn')
         const nameSpan = document.createElement('div')
+        nameSpan.classList.add('call-btn-name')
         nameSpan.innerText = user.name
         // userDiv.addEventListener('click', e => callClickedUser(e, 'video'))
         userDiv.setAttribute('socket', user.socketId)
