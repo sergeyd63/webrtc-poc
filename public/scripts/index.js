@@ -95,21 +95,22 @@ async function initPeerConnection(socketId) {
             //     username: "louis@mozilla.com",
             //     credential: "webrtcdemo"
             // },
-            {
-                urls: 'turn:numb.viagenie.ca',
-                credential: 'muazkh',
-                username: 'webrtc@live.com'
-            },
+            // {
+            //     urls: 'turn:numb.viagenie.ca',
+            //     credential: 'muazkh',
+            //     username: 'webrtc@live.com'
+            // },
             {
                 urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302",
-                    "stun:stun3.l.google.com:19302",
-                    "stun:stun4.l.google.com:19302",
-                    "stun:stun.example.com",
+                    // "stun:stun.l.google.com:19302",
+                    // "stun:stun1.l.google.com:19302",
+                    // "stun:stun2.l.google.com:19302",
+                    // "stun:stun3.l.google.com:19302",
+                    // "stun:stun4.l.google.com:19302",
+                    // "stun:stun.example.com",
                     // "stun:stun-1.example.com",
-                    "stun:stun.stunprotocol.org"
+                    // "stun:stun.stunprotocol.org"
+                    "stun:192.168.1.172:3478"
                 ]
             }]
     });
@@ -192,7 +193,7 @@ async function initPeerConnection(socketId) {
                         pairDiv.id = pair.id
                         statsDiv.append(pairDiv)
                     }
-                    let c1Div = document.getElementById()
+                    // let c1Div = document.getElementById()
 
                     pairDiv.innerHTML = JSON.stringify(pair)
                 })
@@ -285,9 +286,9 @@ function updateUserList(socketIds, userNames) {
 }
 /****************************************************************************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 socket.on('connect', () => {
     // console.log('My socket id', socket.id, myName.value)
