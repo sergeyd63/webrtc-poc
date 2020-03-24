@@ -40,7 +40,7 @@ body {
   height: calc(100vh - 89px);
   /* display        : flex; */
   justify-content: space-between;
-  overflow: hidden;
+  /* overflow: hidden; */
 }
 
 .active-users-panel {
@@ -157,4 +157,26 @@ body {
 .call-btn-name {
   width: calc(100% - 80px);
   overflow: hidden;
+}
+
+.pair {
+  border: 1px solid;
+  padding: 5px;
+  margin: 5px;
+  width: 100%;
+}
+
+.cand {
+  border: 2px solid blue;
+  padding: 5px;
+  margin: 5px 5px 5px 20px;
+  width: 45%;
+}
+
+.remote {
+  border-color: red;
+}
+
+.bytes {
+  border: 3px solid greenyellow;
 }

@@ -110,8 +110,12 @@ async function initPeerConnection(socketId) {
                     "stun:stun.example.com",
                     // "stun:stun-1.example.com",
                     // "stun:stun.stunprotocol.org"
-                    "stun:192.168.1.172:3478"
                 ]
+            },
+            {
+                urls: "stun:192.168.1.172:3478",
+                username: "zebu-stun",
+                credential: "passZebuStun"
             }]
     });
 
@@ -164,40 +168,95 @@ async function initPeerConnection(socketId) {
                 let candidatePair = []
                 let candidateList = []
                 const statsDiv = document.getElementById('stats')
-                // setInterval(async () => {
-                const stats = await peerConnection.getStats();
-                stats.forEach(stat => {
-                    if (stat.type === 'candidate-pair') {
-                        const exists = candidatePair.find(cp => cp.id === stat.id)
-                        !exists && candidatePair.push(stat)
-                        // console.log('ICE STAT', stat)
-                    }
-                    else if (stat.type === 'remote-candidate' || stat.type === 'local-candidate') {
-                        console.log(stat)
-                        const cExist = candidateList.find(c => c.id === stat.id)
-                        if (!cExist) {
-                            candidateList.push(stat)
+                setInterval(async () => {
+                    const stats = await peerConnection.getStats();
+                    stats.forEach(stat => {
+                        if (stat.type === 'candidate-pair') {
+                            const exists = candidatePair.find(cp => cp.id === stat.id)
+                            !exists && candidatePair.push(stat)
+                            // console.log('ICE STAT', stat)
                         }
-                    }
-                })
+                        else if (stat.type === 'remote-candidate' || stat.type === 'local-candidate') {
+                            // console.log(stat)
+                            const cExist = candidateList.find(c => c.id === stat.id)
+                            if (!cExist) {
+                                candidateList.push(stat)
+                            }
+                        }
+                    })
 
-                candidatePair.forEach(pair => {
-                    const ids = pair.id.split('_')
+                    /*
+                    {"id":"RTCIceCandidatePair_b2Faf2aP_0RSVIrAr",
+                    "timestamp":1585090702725.322,
+                    "type":"candidate-pair",
+                    "transportId":"RTCTransport_0_1",
+                    "localCandidateId":"RTCIceCandidate_b2Faf2aP",
+                    "remoteCandidateId":"RTCIceCandidate_0RSVIrAr",
+                    "state":"waiting",
+                    "priority":7205793488602807000,
+                    "nominated":false,
+                    "writable":false,
+                    "bytesSent":0,
+                    "bytesReceived":0,
+                    "totalRoundTripTime":0,
+                    "requestsReceived":0,
+                    "requestsSent":0,
+                    "responsesReceived":0,
+                    "responsesSent":0,
+                    "consentRequestsSent":0}
+                    */
+                    candidatePair.forEach(pair => {
+                        // const ids = pair.id.split('_')
+                        const localId = pair.localCandidateId.split('_')[1]
+                        const remoteId = pair.remoteCandidateId.split('_')[1]
 
-                    let c1 = candidateList.find(c => c.id.split('_')[1] === ids[1])
-                    let c2 = candidateList.find(c => c.id.split('_')[1] === ids[2])
-                    console.log('Candidate Pair', pair, c1, c2)
-                    let pairDiv = document.getElementById(pair.id)
-                    if (!pairDiv) {
-                        pairDiv = document.createElement('div')
-                        pairDiv.id = pair.id
-                        statsDiv.append(pairDiv)
-                    }
-                    // let c1Div = document.getElementById()
+                        let local = candidateList.find(c => c.id.split('_')[1] === localId)
+                        let remote = candidateList.find(c => c.id.split('_')[1] === remoteId)
+                        // console.log('Candidate Pair', pair, local, remote)
+                        let pairDiv = document.getElementById(pair.id)
+                        if (!pairDiv) {
+                            pairDiv = document.createElement('div')
+                            pairDiv.classList.add('pair')
+                            pairDiv.id = pair.id
+                            statsDiv.append(pairDiv)
+                            if (pair.bytesReceived > 0 || pair.bytesSent > 0) {
+                                pairDiv.classList.add('bytes')
+                            }
+                        }
+                        /*
+                        {"id":"RTCIceCandidate_lywHGkbe",
+                        "timestamp":1585091559024.268,
+                        "type":"local-candidate",
+                        "transportId":"RTCTransport_0_1",
+                        "isRemote":false,
+                        "networkType":"wifi",
+                        "ip":"192.168.2.15",
+                        "port":64625,
+                        "protocol":"udp",
+                        "candidateType":"host",
+                        "priority":2122260223,
+                        "deleted":false}
+                        */
+                        let localDiv = document.getElementById(local.id + pair.id)
+                        if (!localDiv) {
+                            localDiv = document.createElement('div')
+                            localDiv.classList.add('cand', 'local')
+                            localDiv.id = local.id + pair.id
+                            statsDiv.append(localDiv)
+                        }
+                        let remoteDiv = document.getElementById(remote.id + pair.id)
+                        if (!remoteDiv) {
+                            remoteDiv = document.createElement('div')
+                            remoteDiv.classList.add('cand', 'remote')
+                            remoteDiv.id = remote.id + pair.id
+                            statsDiv.append(remoteDiv)
+                        }
 
-                    pairDiv.innerHTML = JSON.stringify(pair)
-                })
-                // }, 1000)
+                        localDiv.innerHTML = `<strong>ID:</strong>${local.id} <strong>isRemote:</strong>${local.isRemote} <strong>networkType:</strong>${local.networkType} <strong>IP:</strong>${local.ip} <strong>candidateType:</strong>${local.candidateType}`
+                        remoteDiv.innerHTML = `<strong>ID:</strong>${remote.id} <strong>isRemote:</strong>${remote.isRemote} <strong>networkType:</strong>${remote.networkType} <strong>IP:</strong>${remote.ip} <strong>candidateType:</strong>${remote.candidateType}`
+                        pairDiv.innerHTML = `<strong>ID</strong>:${pair.id} <strong>STATE</strong>:${pair.state} <strong>bytesSent</strong>:${pair.bytesSent} <strong>bytesReceived</strong>:${pair.bytesReceived}`
+                    })
+                }, 1000)
                 // console.log(peerConnection.iceConnectionState)
 
                 break;
