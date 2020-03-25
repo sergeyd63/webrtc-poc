@@ -95,11 +95,11 @@ async function initPeerConnection(socketId) {
                 credential: 'muazkh',
                 username: 'webrtc@live.com'
             },
-            {
-                urls: "turn:stun.dev.zebu.io",
-                username: "zebu-stun",
-                credential: "passZebuStun"
-            },
+            // {
+            //     urls: "turn:stun.dev.zebu.io",
+            //     username: "zebu-stun",
+            //     credential: "passZebuStun"
+            // },
             {
                 urls: [
                     // "stun:stun.l.google.com:19302",
