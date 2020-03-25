@@ -95,23 +95,23 @@ async function initPeerConnection(socketId) {
             //     username: "louis@mozilla.com",
             //     credential: "webrtcdemo"
             // },
-            {
-                urls: 'turn:numb.viagenie.ca',
-                credential: 'muazkh',
-                username: 'webrtc@live.com'
-            },
-            {
-                urls: [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    "stun:stun2.l.google.com:19302",
-                    "stun:stun3.l.google.com:19302",
-                    "stun:stun4.l.google.com:19302",
-                    "stun:stun.example.com",
+            // {
+            //     urls: 'turn:numb.viagenie.ca',
+            //     credential: 'muazkh',
+            //     username: 'webrtc@live.com'
+            // },
+            // {
+            //     urls: [
+                    // "stun:stun.l.google.com:19302",
+                    // "stun:stun1.l.google.com:19302",
+                    // "stun:stun2.l.google.com:19302",
+                    // "stun:stun3.l.google.com:19302",
+                    // "stun:stun4.l.google.com:19302",
+                    // "stun:stun.example.com",
                     // "stun:stun-1.example.com",
                     // "stun:stun.stunprotocol.org"
-                ]
-            },
+            //     ]
+            // },
             {
                 urls: "stun:192.168.1.172:3478",
                 username: "zebu-stun",
