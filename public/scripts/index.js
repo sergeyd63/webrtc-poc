@@ -107,7 +107,7 @@ async function initPeerConnection(socketId) {
                 username: 'webrtc@live.com'
             },
             {
-                urls: "turn:192.168.1.172:3478",
+                urls: "turn:stun.dev.zebu.io",
                 username: "zebu-stun",
                 credential: "passZebuStun"
             },
@@ -124,7 +124,7 @@ async function initPeerConnection(socketId) {
                 ]
             },
             {
-                urls: "stun:192.168.1.172:3478",
+                urls: "stun:stun.dev.zebu.io",
                 username: "zebu-stun",
                 credential: "passZebuStun"
             }]
