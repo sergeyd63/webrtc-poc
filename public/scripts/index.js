@@ -18,7 +18,6 @@ let peerConnection = undefined
 // let peerConnection = null
 
 let videoConstraints = { audio: true, video: true }
-let currentStream = undefined
 let localStream = undefined
 let cameraOn = false
 const activeUserContainer = document.getElementById("myId");
@@ -26,6 +25,7 @@ const myName = document.querySelector('#myName input')
 const saveName = document.getElementById('saveBtn')
 const userListSelect = document.getElementById('userListSelect')
 const userListDiv = document.getElementById('userListDiv')
+const disconnectCall = document.getElementById('disconnect-remote')
 let iceCandidates = []
 
 const toggleCamera = document.getElementById('toggleCamera')
@@ -35,16 +35,6 @@ const toggleMic = document.getElementById('toggleMic')
 
 
 myName.value = localStorage.getItem('myName')
-
-function logEvents(...vals) {
-    if (logElement) {
-        logElement.innerHTML = '***<br>' + logElement.innerHTML
-        vals.map(val => logElement.innerHTML = `- <strong style="overflow-wrap: anywhere;">${val}</strong>` + '<br>' + logElement.innerHTML)
-    }
-    else {
-        console.log(...vals)
-    }
-}
 
 function unselectUsersFromList() {
     // const alreadySelectedUser = document.querySelectorAll(
@@ -81,13 +71,12 @@ function createUserItemContainer(socketId) {
 
 /****************************************************************************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
-const socket = io.connect("localhost:5050");
+// const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-// const socket = io.connect("https://videotest.dev.zebu.io/");
+const socket = io.connect("https://videotest.dev.zebu.io/");
 
 async function initPeerConnection(socketId) {
     if (peerConnection) {
-
         return peerConnection
     }
     else {
@@ -131,7 +120,7 @@ async function initPeerConnection(socketId) {
     });
 
     peerConnection.ontrack = function ({ streams: [stream] }) {
-        logEvents(`peerConnection - On Track set stream: ${stream}`)
+        console.log(`peerConnection - On Track set stream: ${stream}`)
         const remoteVideo = document.getElementById("remote-video");
         if (remoteVideo) {
             remoteVideo.srcObject = stream;
@@ -152,10 +141,10 @@ async function initPeerConnection(socketId) {
             // All ICE candidates have been sent
         }
     };
-    if (!currentStream) {
+    if (!localStream) {
         return peerConnection
     }
-    currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
     cameraOn = true
 
     // peerConnection.onnegotiationneeded = function () {
@@ -164,7 +153,6 @@ async function initPeerConnection(socketId) {
     //         return peerConnection.setLocalDescription(offer);
     //     })
     //         .then(function () {
-    //             logEvents(`peerConnection - Send offer promise`)
     //             // Send the offer to the remote peer through the signaling server
     //         });
     //     // }
@@ -173,13 +161,18 @@ async function initPeerConnection(socketId) {
     // peerConnection.onremovetrack = handleRemoveTrackEvent;
     peerConnection.oniceconnectionstatechange = async function (event) {
         console.log(`peerConnection - ICE connection state`, peerConnection.iceConnectionState)
+        let interval
         switch (peerConnection.iceConnectionState) {
             case 'connected':
                 // case 'completed':
                 let candidatePair = []
                 let candidateList = []
                 const statsDiv = document.getElementById('stats')
-                setInterval(async () => {
+                interval = setInterval(async () => {
+                    if (!peerConnection) {
+                        clearInterval(interval)
+                        return
+                    }
                     const stats = await peerConnection.getStats();
                     stats.forEach(stat => {
                         if (stat.type === 'candidate-pair') {
@@ -279,6 +272,7 @@ async function initPeerConnection(socketId) {
             peerConnection.iceConnectionState === "disconnected" ||
             peerConnection.iceConnectionState === "closed") {
             // Handle the failure
+            clearInterval(interval)
         }
     };
 
@@ -302,7 +296,6 @@ async function initPeerConnection(socketId) {
     }
 
     // peerConnection.onsignalingstatechange = function (event) {
-    //     logEvents(`peerConnection - Signaling state: ${peerConnection.signalingState}`)
     //     if (peerConnection.signalingState === "have-local-pranswer") {
     //         // setLocalDescription() has been called with an answer
     //     }
@@ -429,7 +422,7 @@ async function callUser(callToSocketId, type) {
 
 // accept or not call 
 socket.on("call-made", async data => {
-    logEvents(`Get Called: ${getCalled}`)
+    console.log(`Get Called: ${getCalled}`)
     if (getCalled) {
         const confirmed = confirm(
             `User "${data.name}" wants to call you. Do accept this call?`
@@ -452,8 +445,6 @@ socket.on("call-made", async data => {
     await peerConnection.setRemoteDescription(
         new RTCSessionDescription(data.offer)
     );
-
-
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(new RTCSessionDescription(answer));
@@ -498,8 +489,7 @@ socket.on("call-rejected", data => {
 
 socket.on("hang-up", () => {
     console.log('broadcast hangup')
-    logEvents('called for hangup')
-    disconnect(currentStream, true)
+    disconnect(localStream, true)
 })
 
 const getAllDevices = async function () {
@@ -523,11 +513,10 @@ const getAllDevices = async function () {
             const textNode = document.createTextNode(label);
             option.appendChild(textNode);
             deviceList.appendChild(option);
-            dList.innerHTML = `${dList.innerHTML} <br> id: ${mediaDevice.deviceId} <br> name: ${mediaDevice.label} <br> kind: ${mediaDevice.kind}`
+            // dList.innerHTML = `${dList.innerHTML} <br> id: ${mediaDevice.deviceId} <br> name: ${mediaDevice.label} <br> kind: ${mediaDevice.kind}`
         });
 
         // deviceList.addEventListener('change', d => {
-        // logEvents('Selection changed', d.target.value)
         // let videoConstraints = { deviceId: { exact: d.target.value } }
 
         // const constraints = {
@@ -545,13 +534,14 @@ getAllDevices()
 const startLocalVideo = async function (constraints = videoConstraints) {
 
     try {
-        currentStream = await navigator.mediaDevices.getUserMedia(constraints)
+        localStream = await navigator.mediaDevices.getUserMedia(constraints)
 
         /* use the stream */
         const localVideo = document.getElementById("local-video");
         // console.log('start local video', constraints, localVideo)
         if (localVideo) {
-            localVideo.srcObject = currentStream;
+            localVideo.srcObject = localStream;
+            disconnectCall.classList.remove('hide')
         }
 
         // currentStream.getTracks().forEach(track => {
@@ -562,33 +552,40 @@ const startLocalVideo = async function (constraints = videoConstraints) {
         // currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
 
         const d = document.getElementById('disconnect-local')
-        d.addEventListener('click', () => disconnect(currentStream))
+        d.addEventListener('click', () => disconnect(localStream))
 
     } catch (err) {
         /* handle the error */
-        logEvents('startLocalVideo', err.message, err.name)
+        console.log('startLocalVideo', err.message, err.name)
         // console.log(err.message);
     }
 }
 
 function disconnect(stream, hangUp = false) {
-    logEvents('DISCONNECT')
+    console.log('DISCONNECT')
 
-    stream && stream.getTracks().forEach(function (track) {
-        track.stop();
-    });
+    // stream && stream.getTracks().forEach(function (track) {
+    //     track.stop();
+    // });
 
     if (hangUp && peerConnection) {
         peerConnection.close()
+        peerConnection = undefined
+        // getCalled = false
+        toggleVideo()
+        localStream = undefined
+
+        disconnectCall.classList.add('hide')
     }
     // socket.emit('disconnect')
 }
 
-const disc = document.getElementById('disconnect-remote')
 
-disc.addEventListener('click', () => {
+
+disconnectCall.addEventListener('click', () => {
     console.log('hangup')
     socket.emit("hangup-all")
+    disconnect(localStream, true)
 })
 
 // const callBtn = document.getElementById('call-btn')
@@ -607,19 +604,19 @@ function callClickedUser(e, type) {
 }
 
 function toggleVideo(close) {
-    if (!currentStream) {
+    if (!localStream) {
         return
     }
 
     if (cameraOn) {
-        currentStream.getTracks().forEach(function (track) {
+        localStream.getTracks().forEach(function (track) {
             track.stop();
             // console.log('track enabled', track.enabled)
             // track.enabled = !track.enabled
         });
     }
     else {
-        currentStream.getTracks().forEach(track => peerConnection.addTrack(track, currentStream));
+        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
     }
     cameraOn = !cameraOn
 }

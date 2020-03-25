@@ -180,3 +180,27 @@ body {
 .bytes {
   border: 3px solid greenyellow;
 }
+
+#disconnect-remote {
+  cursor: pointer;
+  position: absolute;
+  bottom: -70px;
+  left: 48%;
+  /* opacity: 0; */
+  background-image: url(./img/hangup.png);
+  width: 60px;
+  height: 60px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  transition: bottom .3s;
+  z-index: 9;
+}
+
+.video-container:hover #disconnect-remote {
+  bottom: 15px;
+}
+
+.hide {
+  display: none;
+}
