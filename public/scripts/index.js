@@ -81,9 +81,9 @@ function createUserItemContainer(socketId) {
 
 /****************************************************************************************************************************/
 // const socket = io.connect("192.168.2.15:5050");
-// const socket = io.connect("localhost:5050");
+const socket = io.connect("localhost:5050");
 // const socket = io.connect("http://192.168.1.172:5050/");
-const socket = io.connect("https://videotest.dev.zebu.io/");
+// const socket = io.connect("https://videotest.dev.zebu.io/");
 
 async function initPeerConnection(socketId) {
     if (peerConnection) {
@@ -101,11 +101,11 @@ async function initPeerConnection(socketId) {
             //     username: "louis@mozilla.com",
             //     credential: "webrtcdemo"
             // },
-            // {
-            //     urls: 'turn:numb.viagenie.ca',
-            //     credential: 'muazkh',
-            //     username: 'webrtc@live.com'
-            // },
+            {
+                urls: 'turn:numb.viagenie.ca',
+                credential: 'muazkh',
+                username: 'webrtc@live.com'
+            },
             {
                 urls: "turn:stun.dev.zebu.io",
                 username: "zebu-stun",
