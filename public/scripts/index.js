@@ -101,11 +101,11 @@ async function initPeerConnection(socketId) {
             //     username: "louis@mozilla.com",
             //     credential: "webrtcdemo"
             // },
-            // {
-            //     urls: 'turn:numb.viagenie.ca',
-            //     credential: 'muazkh',
-            //     username: 'webrtc@live.com'
-            // },
+            {
+                urls: 'turn:numb.viagenie.ca',
+                credential: 'muazkh',
+                username: 'webrtc@live.com'
+            },
             {
                 urls: [
                     // "stun:stun.l.google.com:19302",
